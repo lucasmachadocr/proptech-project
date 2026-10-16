@@ -37,6 +37,8 @@ interface State {
   units: Unit[];
   signed: SignedLease[];
   incidents: Incident[];
+  demoStep: number | null; // guided investor demo: current step (not persisted)
+  setDemoStep: (n: number | null) => void;
   setBrief: (b: Brief) => void;
   runAllocation: () => Plan;
   approvePlan: () => void;
@@ -62,6 +64,7 @@ export const useStore = create<State>()(
   persist(
     (set, get) => ({
       ...initial(),
+      demoStep: null,
       setBrief: (brief) => set({ brief, plan: null, approvedAt: null, change: null, signed: [] }),
       runAllocation: () => {
         const plan = allocate(get().brief, get().units);
@@ -89,7 +92,8 @@ export const useStore = create<State>()(
       setUnitStatus: (unitId, status) => set({ units: get().units.map((u) => (u.id === unitId ? { ...u, status } : u)) }),
       signLease: (l) => set({ signed: [...get().signed.filter((s) => s.unitId !== l.unitId), l] }),
       addIncident: (i) => set({ incidents: [i, ...get().incidents] }),
-      reset: () => set(initial()),
+      setDemoStep: (demoStep) => set({ demoStep }),
+      reset: () => set({ ...initial(), demoStep: null }),
     }),
     {
       name: 'settle-in-demo-v1',
