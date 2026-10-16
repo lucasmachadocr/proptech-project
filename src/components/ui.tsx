@@ -117,5 +117,5 @@ export const th = 'px-3 py-2 text-left text-xs font-semibold tracking-wide text-
 export const td = 'px-3 py-2.5 align-top';
 export const tableWrap = 'overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-sm';
 export const tableCls = 'w-full min-w-[640px] border-collapse text-sm';
-export const inputCls = 'mt-1 block w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-teal-700 focus:ring-1 focus:ring-teal-700 focus:outline-none';
+export const inputCls = 'mt-1 block w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 shadow-sm sm:text-sm focus:border-teal-700 focus:ring-1 focus:ring-teal-700 focus:outline-none';
 export const labelCls = 'block text-sm font-medium text-stone-700';

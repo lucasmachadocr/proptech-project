@@ -49,7 +49,7 @@ export default function Layout() {
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[1000] focus:rounded focus:bg-white focus:px-3 focus:py-2">
         Skip to content
       </a>
-      <header className="sticky top-0 z-[500] border-b border-stone-200 bg-white/95 backdrop-blur">
+      <header className="safe-top relative top-0 z-[500] sm:sticky border-b border-stone-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
           <NavLink to="/demo" className="flex items-center gap-2.5 rounded-md">
             <span aria-hidden className="grid h-8 w-8 place-items-center rounded-lg bg-teal-700 text-white">
@@ -64,14 +64,14 @@ export default function Layout() {
           </NavLink>
 
           <nav aria-label="Role" className="order-3 w-full sm:order-none sm:w-auto">
-            <div className="inline-flex rounded-lg bg-stone-100 p-1" role="tablist">
+            <div className="flex w-full rounded-lg bg-stone-100 p-1 sm:inline-flex sm:w-auto" role="tablist">
               {ROLES.map((r) => (
                 <button
                   key={r.key}
                   role="tab"
                   aria-selected={role === r.key}
                   onClick={() => navigate(r.home)}
-                  className={cx('rounded-md px-3 py-1.5 text-sm font-medium transition-colors', role === r.key ? 'bg-white text-teal-800 shadow-sm' : 'text-stone-600 hover:text-stone-900')}
+                  className={cx('flex-1 rounded-md px-2 py-1.5 text-sm font-medium transition-colors sm:flex-none sm:px-3', role === r.key ? 'bg-white text-teal-800 shadow-sm' : 'text-stone-600 hover:text-stone-900')}
                 >
                   {r.label}
                 </button>
@@ -111,7 +111,7 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-stone-200 bg-white">
+      <footer className="safe-bottom border-t border-stone-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs text-stone-500 sm:px-6">
           <span>
             <strong className="font-semibold text-stone-700">Demo data — fictional.</strong> Companies, providers, units and people are invented for an ESCP PropTech venture project. Commute times are estimates.
