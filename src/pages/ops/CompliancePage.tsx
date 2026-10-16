@@ -118,6 +118,11 @@ export default function CompliancePage() {
             }
             actions={<Light light={result.overall} />}
           >
+            {!result.canSign && (
+              <div className="mb-3 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white" role="alert">
+                ⛔ Signature blocked — {reds} rule{reds > 1 ? 's' : ''} failed
+              </div>
+            )}
             <ul className="space-y-2" data-testid="compliance-rules">
               {result.rules.map((r) => (
                 <li key={r.id} className={cx('flex gap-3 rounded-lg border px-3 py-2.5 text-sm', r.light === 'red' ? 'border-red-200 bg-red-50/60' : r.light === 'amber' ? 'border-amber-200 bg-amber-50/60' : 'border-stone-200')}>
