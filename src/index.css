@@ -7,11 +7,23 @@
 
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  /* Brand: terracotta from the "settle in" logo (#C9573A) on warm cream. */
+  --color-brand-50: #fdf3ee;
+  --color-brand-100: #fae3d8;
+  --color-brand-200: #f4c5b1;
+  --color-brand-300: #eca285;
+  --color-brand-400: #e07a57;
+  --color-brand-500: #d4633f;
+  --color-brand-600: #c9573a;
+  --color-brand-700: #a8432e;
+  --color-brand-800: #8a3727;
+  --color-brand-900: #6e2d21;
+  --color-cream: #faf4ee;
 }
 
-html { background: var(--color-stone-50); color: var(--color-stone-900); }
+html { background: var(--color-cream); color: var(--color-stone-900); }
 body { font-feature-settings: 'cv11', 'ss01'; }
-:focus-visible { outline: 2px solid var(--color-teal-700); outline-offset: 2px; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--color-brand-700); outline-offset: 2px; border-radius: 4px; }
 .num { font-variant-numeric: tabular-nums; }
 .leaflet-container { font: inherit; }
 /* Grid children may shrink below their content width (wide tables scroll inside their wrapper). */
