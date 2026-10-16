@@ -150,7 +150,7 @@ export default function BriefPage() {
             </>
           }
         >
-          {csvNote && <p className="mb-3 text-sm text-teal-800">{csvNote}</p>}
+          {csvNote && <p className="mb-3 text-sm text-brand-800">{csvNote}</p>}
           <div className={tableWrap}>
             <table className={tableCls}>
               <thead className="bg-stone-50">
@@ -181,15 +181,15 @@ export default function BriefPage() {
           </div>
           <p className="mt-3 text-xs text-stone-500">
             CSV columns: <code>name,role,title,adults,children</code> ·{' '}
-            <a className="text-teal-800 underline" href={`${import.meta.env.BASE_URL}demo-team.csv`} download>
+            <a className="text-brand-800 underline" href={`${import.meta.env.BASE_URL}demo-team.csv`} download>
               download a sample
             </a>
           </p>
         </Card>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-teal-200 bg-teal-50 px-5 py-4">
-        <div className="text-sm text-teal-900">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-brand-200 bg-brand-50 px-5 py-4">
+        <div className="text-sm text-brand-900">
           <span className="font-semibold">{company.name}</span> · {draft.employees.length} people · {draft.months} months · ≤ {draft.maxCommuteMin} min commute
         </div>
         <Button onClick={generate} disabled={draft.employees.length === 0} data-testid="generate-plan">

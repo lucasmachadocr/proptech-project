@@ -138,7 +138,7 @@ export default function PlanPage() {
                       </span>
                     </div>
                     <div className="mt-1 h-1.5 rounded-full bg-stone-100">
-                      <div className="h-1.5 rounded-full bg-teal-600" style={{ width: `${Math.min(100, p * 100)}%` }} />
+                      <div className="h-1.5 rounded-full bg-brand-600" style={{ width: `${Math.min(100, p * 100)}%` }} />
                     </div>
                   </div>
                 );
