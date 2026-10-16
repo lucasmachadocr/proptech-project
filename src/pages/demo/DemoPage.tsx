@@ -87,14 +87,14 @@ export default function DemoPage() {
 
   return (
     <>
-      <section className="relative overflow-hidden rounded-2xl border border-stone-200 bg-white px-6 py-10 shadow-sm sm:px-10">
+      <section className="relative overflow-hidden rounded-2xl border border-stone-200 bg-white px-5 py-7 shadow-sm sm:px-10 sm:py-10">
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-teal-50" aria-hidden />
         <div className="relative max-w-3xl">
           <Badge tone="accent">Investor demo · 13 Nov 2026</Badge>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
+          <h1 className="mt-4 text-[26px] leading-tight font-semibold tracking-tight text-stone-900 sm:text-4xl">
             Housing for project teams, planned like a project.
           </h1>
-          <p className="mt-4 text-base leading-relaxed text-stone-600">
+          <p className="mt-4 text-sm leading-relaxed text-stone-600 sm:text-base">
             {APP_NAME} houses the engineers, technicians, managers and expat families who move to Zaragoza for the data-centre and gigafactory build-outs. A company sends one brief; our engine
             proposes one plan; leases, payments and changes run on one platform with one monthly invoice.
           </p>
@@ -107,7 +107,7 @@ export default function DemoPage() {
         </div>
       </section>
 
-      <h2 className="mt-10 mb-4 text-lg font-semibold text-stone-900">Run the demo in five steps</h2>
+      <h2 className="mt-8 mb-4 text-lg font-semibold text-stone-900">Run the demo in five steps</h2>
       <ol className="grid gap-4 md:grid-cols-2 xl:grid-cols-5" data-testid="demo-steps">
         {steps.map((s) => (
           <li key={s.n} className="flex flex-col rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
