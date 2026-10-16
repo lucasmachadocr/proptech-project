@@ -88,7 +88,7 @@ export default function DemoPage() {
   return (
     <>
       <section className="relative overflow-hidden rounded-2xl border border-stone-200 bg-white px-5 py-7 shadow-sm sm:px-10 sm:py-10">
-        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-teal-50" aria-hidden />
+        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-brand-50" aria-hidden />
         <div className="relative max-w-3xl">
           <Badge tone="accent">Investor demo · 13 Nov 2026</Badge>
           <h1 className="mt-4 text-[26px] leading-tight font-semibold tracking-tight text-stone-900 sm:text-4xl">
@@ -122,7 +122,7 @@ export default function DemoPage() {
               type="button"
               data-testid={`demo-step-${s.n}`}
               onClick={() => navigate(s.run())}
-              className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-teal-700 px-3 py-2.5 text-sm font-medium text-white hover:bg-teal-800"
+              className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-brand-700 px-3 py-2.5 text-sm font-medium text-white hover:bg-brand-800"
             >
               {s.button} →
             </button>
