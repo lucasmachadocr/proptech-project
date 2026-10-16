@@ -90,3 +90,21 @@ test('employee issue report is triaged as urgent with a 2 h SLA', async ({ page 
   await expect(page.getByTestId('triage-result')).toContainText('URGENT');
   await expect(page.getByTestId('triage-result')).toContainText('SLA 2 h');
 });
+
+test('guided demo bar walks through all five steps', async ({ page }) => {
+  await openDemo(page);
+  await page.getByTestId('start-guided-demo').click();
+  await expect(page.getByTestId('demo-bar')).toContainText('step 1 of 5');
+  await expect(page.getByTestId('plan-kpis')).toContainText('€27,000');
+  await page.getByTestId('demo-next').click();
+  await expect(page.getByTestId('realloc-diff')).toBeVisible();
+  await page.getByTestId('demo-next').click();
+  await expect(page.getByTestId('trust-score')).toContainText('15');
+  await page.getByTestId('demo-next').click();
+  await expect(page.getByTestId('sign-lease')).toBeDisabled();
+  await page.getByTestId('demo-next').click();
+  await expect(page.getByTestId('revenue')).toHaveText('€29,160');
+  await page.getByTestId('demo-finish').click();
+  await expect(page.getByTestId('demo-steps')).toBeVisible();
+  await expect(page.getByTestId('demo-bar')).toHaveCount(0);
+});
