@@ -14,7 +14,7 @@ Source of truth for operations content: ESCP Deliverable 1, Section 5 (Operation
   demo plan = €27,000/month → 6 months = €162,000 rent → €174,960 invoiced → €29,160 revenue.
 - App name lives only in `src/config.ts` (`APP_NAME`). Rename there.
 - HashRouter (GitHub Pages). Vite `base` comes from `BASE_PATH` (set in CI).
-- Design: stone neutrals + one accent (teal-700); tabular numbers; visible focus rings; responsive.
+- Design: "settle in" logo (terracotta arch, `src/components/Logo.tsx`); cream background + stone neutrals + one accent `brand-*` (terracotta, defined in `src/index.css`); tabular numbers; visible focus rings; responsive; iPhone home-screen icons in `public/`.
 - Before every commit: `npm test` and `npm run build` must pass. Conventional commits.
 - E2E: `npm run e2e` (local preview) or `BASE_URL=<live url> npm run e2e`.
 
