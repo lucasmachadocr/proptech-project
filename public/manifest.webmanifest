@@ -1,0 +1,16 @@
+{
+  "name": "Settle In · Project housing",
+  "short_name": "Settle In",
+  "description": "Clickable MVP: AI-allocated housing for project teams near Zaragoza. Demo data only.",
+  "start_url": "./#/demo",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf4ee",
+  "theme_color": "#faf4ee",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
