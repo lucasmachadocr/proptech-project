@@ -11,9 +11,9 @@ export interface MapUnit {
 }
 
 const STYLE: Record<MapUnit['state'], { color: string; fill: string; r: number; opacity: number }> = {
-  assigned: { color: '#0f766e', fill: '#14b8a6', r: 7, opacity: 0.9 },
-  new: { color: '#0f766e', fill: '#5eead4', r: 8, opacity: 0.95 },
-  moved: { color: '#b45309', fill: '#f59e0b', r: 8, opacity: 0.95 },
+  assigned: { color: '#a8432e', fill: '#d4633f', r: 7, opacity: 0.9 },
+  new: { color: '#a8432e', fill: '#f4c5b1', r: 8, opacity: 0.95 },
+  moved: { color: '#1d4ed8', fill: '#60a5fa', r: 8, opacity: 0.95 },
   free: { color: '#a8a29e', fill: '#e7e5e4', r: 5, opacity: 0.8 },
   flagged: { color: '#b91c1c', fill: '#f87171', r: 8, opacity: 0.95 },
 };
@@ -44,7 +44,7 @@ export default function MapView({ site, units, lines = true, height = 440, focus
           units
             .filter((u) => u.state !== 'free' && u.state !== 'flagged')
             .map((u) => (
-              <Polyline key={`l-${u.unit.id}`} positions={[[site.lat, site.lng], [u.unit.lat, u.unit.lng]]} pathOptions={{ color: u.state === 'moved' ? '#b45309' : '#0f766e', weight: 1.5, opacity: 0.55, dashArray: '4 4' }} />
+              <Polyline key={`l-${u.unit.id}`} positions={[[site.lat, site.lng], [u.unit.lat, u.unit.lng]]} pathOptions={{ color: u.state === 'moved' ? '#1d4ed8' : '#a8432e', weight: 1.5, opacity: 0.55, dashArray: '4 4' }} />
             ))}
         {units.map((u) => {
           const s = STYLE[u.state];
@@ -67,11 +67,11 @@ export default function MapView({ site, units, lines = true, height = 440, focus
           </Tooltip>
         </CircleMarker>
       </MapContainer>
-      <div className="pointer-events-none absolute bottom-2 left-2 z-[400] flex flex-wrap gap-3 rounded-lg bg-white/95 px-3 py-1.5 text-[11px] text-stone-700 shadow">
+      <div className="pointer-events-none absolute top-2 right-2 z-[400] flex max-w-[70%] flex-wrap justify-end gap-x-3 gap-y-1 rounded-lg bg-white/95 px-3 py-1.5 text-[11px] text-stone-700 shadow">
         <Legend color="#1c1917" label="Project site" />
-        <Legend color="#14b8a6" label="Assigned" />
-        {units.some((u) => u.state === 'moved') && <Legend color="#f59e0b" label="Moved" />}
-        {units.some((u) => u.state === 'new') && <Legend color="#5eead4" label="New" />}
+        <Legend color="#d4633f" label="Assigned" />
+        {units.some((u) => u.state === 'moved') && <Legend color="#60a5fa" label="Moved" />}
+        {units.some((u) => u.state === 'new') && <Legend color="#f4c5b1" label="New" />}
         <Legend color="#e7e5e4" label="Available" ring />
       </div>
     </div>

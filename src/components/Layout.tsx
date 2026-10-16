@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { APP_NAME, APP_TAGLINE } from '../config';
 import { useStore } from '../store';
+import { Logo } from './Logo';
 import { cx } from './ui';
 
 type RoleKey = 'client' | 'provider' | 'employee' | 'ops';
@@ -49,29 +50,21 @@ export default function Layout() {
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[1000] focus:rounded focus:bg-white focus:px-3 focus:py-2">
         Skip to content
       </a>
-      <header className="safe-top relative top-0 z-[500] sm:sticky border-b border-stone-200 bg-white/95 backdrop-blur">
+      <header className="safe-top relative top-0 z-[500] border-b border-brand-100 bg-cream/95 backdrop-blur sm:sticky">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
-          <NavLink to="/demo" className="flex items-center gap-2.5 rounded-md">
-            <span aria-hidden className="grid h-8 w-8 place-items-center rounded-lg bg-teal-700 text-white">
-              <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 fill-current">
-                <path d="M4 12.5 12 5l8 7.5V20a1 1 0 0 1-1 1h-5v-5h-4v5H5a1 1 0 0 1-1-1z" />
-              </svg>
-            </span>
-            <span className="leading-tight">
-              <span className="block text-[15px] font-semibold text-stone-900">{APP_NAME}</span>
-              <span className="hidden text-[11px] text-stone-500 sm:block">{APP_TAGLINE}</span>
-            </span>
+          <NavLink to="/demo" className="rounded-md" aria-label={`${APP_NAME} home`}>
+            <Logo tagline={APP_TAGLINE} />
           </NavLink>
 
           <nav aria-label="Role" className="order-3 w-full sm:order-none sm:w-auto">
-            <div className="flex w-full rounded-lg bg-stone-100 p-1 sm:inline-flex sm:w-auto" role="tablist">
+            <div className="flex w-full rounded-lg bg-brand-50 p-1 ring-1 ring-brand-100 sm:inline-flex sm:w-auto" role="tablist">
               {ROLES.map((r) => (
                 <button
                   key={r.key}
                   role="tab"
                   aria-selected={role === r.key}
                   onClick={() => navigate(r.home)}
-                  className={cx('flex-1 rounded-md px-2 py-1.5 text-sm font-medium transition-colors sm:flex-none sm:px-3', role === r.key ? 'bg-white text-teal-800 shadow-sm' : 'text-stone-600 hover:text-stone-900')}
+                  className={cx('flex-1 rounded-md px-2 py-1.5 text-sm font-medium transition-colors sm:flex-none sm:px-3', role === r.key ? 'bg-white text-brand-800 shadow-sm' : 'text-stone-600 hover:text-stone-900')}
                 >
                   {r.label}
                 </button>
@@ -80,10 +73,10 @@ export default function Layout() {
           </nav>
 
           <div className="ml-auto flex items-center gap-2 text-sm">
-            <NavLink to="/demo" className={({ isActive }) => cx('rounded-md px-2.5 py-1.5 font-medium', isActive ? 'text-teal-800' : 'text-stone-600 hover:text-stone-900')}>
+            <NavLink to="/demo" className={({ isActive }) => cx('rounded-md px-2.5 py-1.5 font-medium', isActive ? 'text-brand-800' : 'text-stone-600 hover:text-stone-900')}>
               Investor demo
             </NavLink>
-            <NavLink to="/about-tech" className={({ isActive }) => cx('hidden rounded-md px-2.5 py-1.5 font-medium sm:inline', isActive ? 'text-teal-800' : 'text-stone-600 hover:text-stone-900')}>
+            <NavLink to="/about-tech" className={({ isActive }) => cx('hidden rounded-md px-2.5 py-1.5 font-medium sm:inline', isActive ? 'text-brand-800' : 'text-stone-600 hover:text-stone-900')}>
               Tech
             </NavLink>
             <span className="hidden rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-900 ring-1 ring-amber-300 md:inline">Demo data</span>
@@ -97,7 +90,7 @@ export default function Layout() {
                   key={s.to}
                   to={s.to}
                   end
-                  className={({ isActive }) => cx('border-b-2 px-3 py-2.5 text-sm font-medium whitespace-nowrap', isActive ? 'border-teal-700 text-teal-800' : 'border-transparent text-stone-600 hover:text-stone-900')}
+                  className={({ isActive }) => cx('border-b-2 px-3 py-2.5 text-sm font-medium whitespace-nowrap', isActive ? 'border-brand-700 text-brand-800' : 'border-transparent text-stone-600 hover:text-stone-900')}
                 >
                   {s.label}
                 </NavLink>
