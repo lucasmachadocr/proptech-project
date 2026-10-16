@@ -21,7 +21,8 @@ const STYLE: Record<MapUnit['state'], { color: string; fill: string; r: number; 
 function FitBounds({ bounds }: { bounds: LatLngBoundsExpression }) {
   const map = useMap();
   useEffect(() => {
-    map.fitBounds(bounds, { padding: [28, 28], maxZoom: 13 });
+    // No animation: an animated zoom still running when the page changes throws in Leaflet.
+    map.fitBounds(bounds, { padding: [28, 28], maxZoom: 13, animate: false });
   }, [map, bounds]);
   return null;
 }
@@ -34,7 +35,7 @@ export default function MapView({ site, units, lines = true, height = 440, focus
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-stone-200" style={{ height }} data-testid="plan-map">
-      <MapContainer center={[site.lat, site.lng]} zoom={11} scrollWheelZoom={false} className="h-full w-full">
+      <MapContainer center={[site.lat, site.lng]} zoom={11} scrollWheelZoom={false} zoomAnimation={false} className="h-full w-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
