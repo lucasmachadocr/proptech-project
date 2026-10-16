@@ -75,7 +75,7 @@ export default function EmployeePage() {
         <div className="relative w-[360px] max-w-full rounded-[44px] border-[10px] border-stone-900 bg-stone-900 shadow-2xl" data-testid="phone">
           <div className="absolute top-2 left-1/2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-stone-900" />
           <div className="flex h-[700px] flex-col overflow-hidden rounded-[34px] bg-stone-50">
-            <div className="flex items-center justify-between bg-teal-700 px-5 pt-9 pb-4 text-white">
+            <div className="flex items-center justify-between bg-brand-700 px-5 pt-9 pb-4 text-white">
               <div>
                 <div className="text-xs opacity-80">Hi {emp.name.split(' ')[0]} 👋</div>
                 <div className="text-base font-semibold">{TABS.find((t) => t.key === tab)!.label}</div>
@@ -110,14 +110,14 @@ export default function EmployeePage() {
                     {CHECKIN.map((c, i) => (
                       <li key={c}>
                         <label className="flex items-center gap-3">
-                          <input type="checkbox" className="h-4 w-4 accent-teal-700" checked={done[i]} onChange={() => setDone(done.map((d, j) => (j === i ? !d : d)))} />
+                          <input type="checkbox" className="h-4 w-4 accent-brand-700" checked={done[i]} onChange={() => setDone(done.map((d, j) => (j === i ? !d : d)))} />
                           <span className={cx(done[i] && 'text-stone-400 line-through')}>{c}</span>
                         </label>
                       </li>
                     ))}
                   </ol>
                   <div className="mt-3 h-1.5 rounded-full bg-stone-100">
-                    <div className="h-1.5 rounded-full bg-teal-600" style={{ width: `${(done.filter(Boolean).length / CHECKIN.length) * 100}%` }} />
+                    <div className="h-1.5 rounded-full bg-brand-600" style={{ width: `${(done.filter(Boolean).length / CHECKIN.length) * 100}%` }} />
                   </div>
                   <p className="mt-2 text-xs text-stone-500">Key handover by local partner, 30 Nov 2026, 18:00–20:00.</p>
                 </PhoneCard>
@@ -146,7 +146,7 @@ export default function EmployeePage() {
                     <textarea id="issue" rows={3} className={inputCls} value={text} onChange={(e) => setText(e.target.value)} placeholder="Describe the problem…" />
                     <div className="mt-2 flex flex-wrap gap-1">
                       {EXAMPLES.map((x) => (
-                        <button key={x} type="button" onClick={() => setText(x)} className="rounded-full border border-stone-200 bg-white px-2 py-0.5 text-[11px] text-stone-600 hover:border-teal-600">
+                        <button key={x} type="button" onClick={() => setText(x)} className="rounded-full border border-stone-200 bg-white px-2 py-0.5 text-[11px] text-stone-600 hover:border-brand-600">
                           {x}
                         </button>
                       ))}
@@ -166,7 +166,7 @@ export default function EmployeePage() {
                   type="button"
                   aria-current={tab === t.key ? 'page' : undefined}
                   onClick={() => setTab(t.key)}
-                  className={cx('flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium', tab === t.key ? 'text-teal-700' : 'text-stone-500')}
+                  className={cx('flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium', tab === t.key ? 'text-brand-700' : 'text-stone-500')}
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d={t.icon} />
