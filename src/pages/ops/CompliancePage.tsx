@@ -50,7 +50,7 @@ export default function CompliancePage() {
                 type="button"
                 aria-pressed={scenario === s}
                 onClick={() => setParams({ scenario: s })}
-                className={cx('rounded-md px-3 py-1.5 text-sm font-medium', scenario === s ? 'bg-white text-teal-800 shadow-sm' : 'text-stone-600')}
+                className={cx('rounded-md px-3 py-1.5 text-sm font-medium', scenario === s ? 'bg-white text-brand-800 shadow-sm' : 'text-stone-600')}
               >
                 {s === 'compliant' ? 'Standard lease' : 'Non-compliant example'}
               </button>
@@ -86,7 +86,7 @@ export default function CompliancePage() {
                 Cause of temporary stay
                 <button
                   type="button"
-                  className="text-xs font-medium text-teal-800 hover:underline"
+                  className="text-xs font-medium text-brand-800 hover:underline"
                   onClick={() => assignment && set('cause', draftForAssignment(brief, assignment).cause)}
                 >
                   Draft from brief <AiBadge />
@@ -95,7 +95,7 @@ export default function CompliancePage() {
               <textarea rows={4} className={inputCls} value={draft.cause} onChange={(e) => set('cause', e.target.value)} />
             </label>
             <label className="flex items-center gap-2 text-sm text-stone-700 sm:col-span-2">
-              <input type="checkbox" className="h-4 w-4 accent-teal-700" checked={draft.assignmentLetter} onChange={(e) => set('assignmentLetter', e.target.checked)} />
+              <input type="checkbox" className="h-4 w-4 accent-brand-700" checked={draft.assignmentLetter} onChange={(e) => set('assignmentLetter', e.target.checked)} />
               Employer assignment letter attached
             </label>
             <label className={labelCls}>

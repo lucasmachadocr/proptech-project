@@ -46,7 +46,7 @@ export default function KpiPage() {
             <div className="num mt-4 text-2xl font-semibold tracking-tight text-stone-900">{k.actual}</div>
             <div className="mt-1 text-xs text-stone-500">Target {k.target}</div>
             <div className="mt-3 h-1.5 rounded-full bg-stone-100" aria-hidden>
-              <div className={`h-1.5 rounded-full ${k.ok ? 'bg-teal-600' : 'bg-amber-500'}`} style={{ width: `${k.progress * 100}%` }} />
+              <div className={`h-1.5 rounded-full ${k.ok ? 'bg-brand-600' : 'bg-amber-500'}`} style={{ width: `${k.progress * 100}%` }} />
             </div>
           </Card>
         ))}

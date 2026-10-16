@@ -73,7 +73,7 @@ export default function LeasesPage() {
               {rows.map((r) => {
                 const s = signed.find((x) => x.unitId === r.unit.id);
                 return (
-                  <tr key={r.unit.id} className={cx('cursor-pointer hover:bg-stone-50', current?.unit.id === r.unit.id && 'bg-teal-50/60')} onClick={() => setSelected(r.unit.id)}>
+                  <tr key={r.unit.id} className={cx('cursor-pointer hover:bg-stone-50', current?.unit.id === r.unit.id && 'bg-brand-50/60')} onClick={() => setSelected(r.unit.id)}>
                     <td className={td}>
                       <button type="button" className="text-left font-medium text-stone-900 hover:underline">
                         {r.unit.id}

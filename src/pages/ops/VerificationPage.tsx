@@ -90,7 +90,7 @@ export default function VerificationPage() {
                   <tr
                     key={u.id}
                     data-testid={`queue-${u.id}`}
-                    className={cx('cursor-pointer hover:bg-stone-50', selected === u.id && 'bg-teal-50/60', r?.decision === 'reject' && 'bg-red-50/50')}
+                    className={cx('cursor-pointer hover:bg-stone-50', selected === u.id && 'bg-brand-50/60', r?.decision === 'reject' && 'bg-red-50/50')}
                     onClick={() => setSelected(u.id)}
                   >
                     <td className={td}>
