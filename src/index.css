@@ -16,3 +16,7 @@ body { font-feature-settings: 'cv11', 'ss01'; }
 .leaflet-container { font: inherit; }
 /* Grid children may shrink below their content width (wide tables scroll inside their wrapper). */
 .grid > * { min-width: 0; }
+/* iPhone home-screen app: respect the notch / home indicator. */
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); -webkit-tap-highlight-color: transparent; }
