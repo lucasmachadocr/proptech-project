@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { APP_NAME, APP_TAGLINE } from '../config';
 import { useStore } from '../store';
+import DemoBar from './DemoBar';
 import { Logo } from './Logo';
 import { cx } from './ui';
 
@@ -40,13 +41,14 @@ export default function Layout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const reset = useStore((s) => s.reset);
+  const demoActive = useStore((s) => s.demoStep !== null) && pathname !== '/demo';
   const role = ROLES.find((r) => pathname.startsWith(`/${r.key}`))?.key;
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className={cx('flex min-h-screen flex-col', demoActive && 'pb-20')}>
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[1000] focus:rounded focus:bg-white focus:px-3 focus:py-2">
         Skip to content
       </a>
@@ -104,6 +106,7 @@ export default function Layout() {
         <Outlet />
       </main>
 
+      <DemoBar />
       <footer className="safe-bottom border-t border-stone-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs text-stone-500 sm:px-6">
           <span>
