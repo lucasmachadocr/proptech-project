@@ -32,7 +32,7 @@ export default function OnboardingPage() {
           <li key={s}>
             <span
               aria-current={i === step ? 'step' : undefined}
-              className={cx('inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm', i === step ? 'bg-teal-700 text-white' : i < step ? 'bg-teal-50 text-teal-800' : 'bg-stone-100 text-stone-500')}
+              className={cx('inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm', i === step ? 'bg-brand-700 text-white' : i < step ? 'bg-brand-50 text-brand-800' : 'bg-stone-100 text-stone-500')}
             >
               <span className="num font-semibold">{i < step ? '✓' : i + 1}</span> {s}
             </span>
