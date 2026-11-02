@@ -9,6 +9,7 @@ interface Tool {
 
 const BUILT_WITH: Tool[] = [
   { name: 'Claude Code (Anthropic)', use: 'AI coding assistant used to write this MVP', cost: 'Paid', note: 'Used under a paid Claude subscription. Team reviewed the plan, data and outputs.' },
+  { name: 'Claude (Anthropic)', use: 'Research, document review and drafting of the business plan', cost: 'Paid', note: 'Paid Claude subscription' },
   { name: 'Vite', use: 'Build tool and dev server', cost: 'Free', note: 'Open source (MIT)' },
   { name: 'React + React DOM', use: 'User interface', cost: 'Free', note: 'Open source (MIT)' },
   { name: 'TypeScript', use: 'Typed JavaScript', cost: 'Free', note: 'Open source (Apache-2.0)' },
@@ -21,6 +22,7 @@ const BUILT_WITH: Tool[] = [
   { name: 'Vitest', use: 'Unit tests for the engines', cost: 'Free', note: 'Open source (MIT)' },
   { name: 'Playwright', use: 'End-to-end test of the 5-step demo', cost: 'Free', note: 'Open source (Apache-2.0)' },
   { name: 'GitHub, GitHub Actions, GitHub Pages', use: 'Code hosting, build and public website', cost: 'Free', note: 'Free for public repositories' },
+  { name: 'Netlify', use: 'Public website (settle-in-app.netlify.app)', cost: 'Free', note: 'Free plan' },
 ];
 
 const PHASE_2: Tool[] = [
@@ -74,7 +76,7 @@ export default function AboutTechPage() {
           </Card>
           <Card title="Total running cost today">
             <div className="num text-3xl font-semibold text-stone-900">€0 / month</div>
-            <p className="mt-1 text-sm text-stone-600">Hosting, build and maps are free. The only paid tool was the AI coding assistant used to build it.</p>
+            <p className="mt-1 text-sm text-stone-600">Hosting (Netlify, GitHub Pages), build and maps are free. The paid tools are Claude Code (used to build the MVP) and Claude (used for research and drafting).</p>
           </Card>
         </div>
       </div>

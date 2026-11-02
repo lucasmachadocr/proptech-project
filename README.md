@@ -1,12 +1,14 @@
-# Settle In: PropTech MVP (ESCP investor demo, 13 Nov 2026)
+# Settle In — AI MVP (ESCP investor pitch, 13 Nov 2026)
 
-1. **Live demo:** https://settle-in-app.netlify.app (mirror: https://lucasmachadocr.github.io/proptech-project/). Click **▶ Start guided demo** and use Next → in the bottom bar. "Reset demo" is in the footer. On iPhone: Safari → Share → Add to Home Screen.
-2. **What it is:** a clickable, 100% static MVP. A company sends one brief, an "AI" engine proposes one housing plan, and the platform handles changes, verification, lease compliance and one monthly invoice.
-3. **Roles** (switcher in the header): Client (brief → plan → changes → invoice) · Provider (units, onboarding, payouts) · Employee (phone app, AI issue triage) · Operations (Section 5 of our report).
-4. **The AI is local and explainable.** `src/ai/` holds the allocation optimiser, verification checks, the RDL 29/2026 compliance rules and triage. There are no API keys. `src/ai/llm.ts` is where Claude plugs in for phase 2.
-5. **Numbers:** the demo plan is locked by tests at €27,000/month. Over 6 months that is €162,000 rent, €174,960 invoiced and €29,160 revenue (18% take rate).
-6. **All data is fictional** (`src/data/`). To rename the product, edit `APP_NAME` in `src/config.ts`.
-7. **Run locally:** `npm install`, then `npm run dev` (http://localhost:5173).
-8. **Tests:** `npm test` runs 37 unit tests. `npm run e2e` runs the 5-step demo in a headless browser (`npx playwright install chromium` the first time).
-9. **Deploy:** every push to `main` publishes to GitHub Pages (`.github/workflows/deploy.yml`). Netlify: `npm run build`, zip `dist/` and drop it on the settle-in-app project (Deploys → drag and drop).
-10. **More detail:** PLAN.md (design), CLAUDE.md (rules for AI-assisted edits), and the /about-tech page (tools and costs disclosure).
+*Housing that follows your project.* Settle In finds, books and manages furnished apartments for whole project teams: one brief, one plan, one monthly invoice.
+
+1. **Live demo:** https://settle-in-app.netlify.app (mirror: https://lucasmachadocr.github.io/proptech-project/). Click **Start the demo** and use **Next →** in the bottom bar (Brief → Plan → Approve → Re-plan → Invoice). "Reset demo" is in the header.
+2. **Demo case:** 20 engineers in Madrid for 6 months. The engine offers A lowest cost €1,935 / 31 min, B balanced €1,992 / 22 min (recommended), C closest €2,140 / 12 min per apartment-month. A person reviews before the client sees it.
+3. **Pricing (business plan v11):** 6% operator commission + company markup 5% / 4% / 3% (1–9 / 10–24 / 25+ apartments) + optional Flex 2% (1 pt revenue, 1 pt operator pool). Demo: rent €225,504 → company pays €239,034 → Settle In revenue €24,805.
+4. **Re-plan:** +3 engineers from month 3 → 3 × €1,992 × 4 months = +€23,904, nobody moves, 23 apartments (still 4%).
+5. **Ops console:** plan review, verification (KYC, Catastro, duplicate photos, price, regional registration — a fake listing is caught), lease compliance (RDL 29/2026, signing blocked on red), payouts ledger (Flex pool kept out of revenue), KPIs (38.5 vs 182 ops hours, 1 agent per 150 apartments, break-even 235).
+6. **Employee:** a WhatsApp-style chat (welcome pack, check-in photos, AI issue triage) — no app.
+7. **All numbers** come from `SETTLE_IN_FACTS.md` and `src/data/facts.ts`, locked by tests. All data is fictional.
+8. **Run locally:** `npm install`, then `npm run dev` (http://localhost:5173). Tests: `npm test` · demo e2e: `npm run e2e` · deck screenshots: `npm run shots`.
+9. **Contribute with your own AI:** read `CONTRIBUTING.md`; give your assistant `AGENTS.md` and `SETTLE_IN_FACTS.md` first.
+10. **Tools:** Claude Code (paid), Claude (paid); React, Vite, TypeScript, Tailwind, Leaflet, OpenStreetMap (free); Netlify and GitHub Pages (free). Full disclosure on the in-app "About this MVP" page.
