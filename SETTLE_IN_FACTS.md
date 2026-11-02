@@ -1,8 +1,6 @@
 # SETTLE_IN_FACTS — single source of numbers for the MVP
 
-Source: business plan **v11**. This file was drafted from the v11 summary because the original
-FACTS file was not available. Rows marked **CONFIRM** are not in that summary: the group must
-validate them, and the app shows a "to confirm" marker next to them.
+Source: business plan **v11 (investor version)**. Every number shown in the app comes from this table.
 
 `src/data/facts.ts` mirrors the table below. `src/data/facts.test.ts` fails if a value drifts.
 To change a number, edit this table and `facts.ts` together.
@@ -38,15 +36,17 @@ To change a number, edit this table and `facts.ts` together.
 | demo.directCostPerApartmentMonth | 36 | v11 | |
 | demo.directCost | 4320 | derived | 36 × 120 |
 | kpi.briefToPlanHours | 48 | v11 | target, at most |
-| kpi.opsHoursPerMission | 39 | v11 | with Settle In |
-| kpi.opsHoursManual | 182 | CONFIRM | baseline "182" from the brief; basis to confirm |
+| kpi.opsHoursPerMission | 38.5 | v11 | ops hours per mission with Settle In |
+| kpi.opsHoursManual | 182 | v11 | ops hours per mission done by hand |
+| kpi.opsHoursSaving | 0.79 | derived | 1 − 38.5 ÷ 182 ≈ −79% |
 | kpi.apartmentsPerAgent | 150 | v11 | 1 support agent per 150 apartments |
-| kpi.breakEvenApartments | 235 | CONFIRM | occupied apartments at break-even; unit and period to confirm |
+| kpi.breakEvenApartments | 235 | v11 | occupied apartments at break-even |
 | lease.minDays | 31 | v11 | more than 31 days |
 | lease.maxMonths | 12 | v11 | |
-| lease.month6Exit | true | v11 | month-6 exit right noted in every lease |
-| vat | not shown on demo totals | CONFIRM | VAT treatment of markup / Flex to confirm |
-| sites | see facts.ts SITES | CONFIRM | chapter 06 site list not available; demo sites are placeholders |
+| lease.tenantExitAfterMonths | 1 | RDL 29/2026 | tenant may leave after 1 month (LAU art. 11.2) |
+| lease.exitNoticeDays | 10 | RDL 29/2026 | with 10 days' notice |
+| vat | VAT excluded on demo totals | v11 | |
+| sites | see facts.ts SITES | illustrative | approximate public areas |
 | mvp.tool | Claude Code (paid) | v11 decision | v11 text says "Lovable"; group chose this build |
 
 ## Arithmetic check (demo case)

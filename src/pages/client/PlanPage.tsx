@@ -93,7 +93,7 @@ export default function PlanPage() {
         <span>
           <strong>Flex</strong> (+{pct(FACTS.pricing.flex)}) included
         </span>
-        <Explain label="What is Flex?">An optional add-on of {pct(FACTS.pricing.flex)} of rent, shown as its own line on the invoice. Half is Settle In revenue, half goes to an operator pool. What Flex covers for the company is to be confirmed by the team.</Explain>
+        <Explain label="What is Flex?">An optional add-on of {pct(FACTS.pricing.flex)} of rent, shown as its own line on the invoice. Half is Settle In revenue, half goes to an operator pool.</Explain>
       </label>
 
       <CityMap city={site.city} chosen={chosen} height={440} showZones={false} />

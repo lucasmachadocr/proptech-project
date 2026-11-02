@@ -37,8 +37,14 @@ describe('SETTLE_IN_FACTS.md ↔ facts.ts', () => {
     }
     expect(num('kpi.briefToPlanHours')).toBe(FACTS.kpi.briefToPlanHours);
     expect(num('kpi.opsHoursPerMission')).toBe(FACTS.kpi.opsHoursPerMission);
-    expect(num('kpi.opsHoursManual')).toBe(FACTS.kpi.opsHoursManual.value);
+    expect(num('kpi.opsHoursManual')).toBe(FACTS.kpi.opsHoursManual);
+    expect(num('kpi.opsHoursSaving')).toBe(FACTS.kpi.opsHoursSaving);
+    expect(Math.round((1 - FACTS.kpi.opsHoursPerMission / FACTS.kpi.opsHoursManual) * 100)).toBe(79);
     expect(num('kpi.apartmentsPerAgent')).toBe(FACTS.kpi.apartmentsPerAgent);
-    expect(num('kpi.breakEvenApartments')).toBe(FACTS.kpi.breakEvenApartments.value);
+    expect(num('kpi.breakEvenApartments')).toBe(FACTS.kpi.breakEvenApartments);
+    expect(rows['vat']).toBe(FACTS.vatNote);
+    expect(md).not.toMatch(/\| CONFIRM \|/);
+    expect(num('lease.tenantExitAfterMonths')).toBe(FACTS.lease.tenantExitAfterMonths);
+    expect(num('lease.exitNoticeDays')).toBe(FACTS.lease.exitNoticeDays);
   });
 });

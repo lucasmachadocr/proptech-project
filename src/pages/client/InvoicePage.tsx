@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { APP_NAME } from '../../config';
-import { Explain, LinkButton, ToConfirm, cx } from '../../components/ui';
+import { Explain, LinkButton, cx } from '../../components/ui';
 import { companyById } from '../../data/companies';
 import { FACTS } from '../../data/facts';
 import { addMonths, formatDate, stayEnd } from '../../lib/dates';
@@ -86,7 +86,7 @@ export default function InvoicePage() {
           <li>• Payment: {FACTS.terms.billing}.</li>
           <li>• Operators are paid {FACTS.terms.payout.toLowerCase()}.</li>
           <li>
-            • VAT not shown on demo totals <ToConfirm />
+            • {FACTS.vatNote}.
           </li>
         </ul>
       </section>

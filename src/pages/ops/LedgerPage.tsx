@@ -40,7 +40,7 @@ export default function LedgerPage() {
         <div className="grid items-center gap-4 lg:grid-cols-[1fr_auto_1fr_auto_2fr]">
           <Box title="Company pays" value={eur(s.companyPays)} explain={`Rent + ${pct(s.markup / m.totalRent)} markup${flex ? ` + ${pct(P.flex)} Flex` : ''}. ${FACTS.terms.billing}.`} testId="ledger-company" />
           <Arrow />
-          <Box title="Payment provider" value="Holds the funds" explain="A licensed payment institution (PSD2) keeps client money segregated and runs the split payout. Provider name to be confirmed." />
+          <Box title="Payment provider" value="Holds the funds" explain="A licensed payment institution (PSD2) keeps client money segregated and runs the split payout." />
           <Arrow />
           <div className="grid gap-3 sm:grid-cols-3">
             <Box title="Operators" value={eur(s.operatorPayout)} sub={`Rent − ${pct(P.operatorCommission)}`} explain={`Paid ${FACTS.terms.payout.toLowerCase()}.`} testId="ledger-operators" />

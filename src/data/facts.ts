@@ -1,5 +1,4 @@
 // Single source of numbers for the MVP. Mirrors SETTLE_IN_FACTS.md (checked by facts.test.ts).
-// `confirm: true` → not in the v11 summary; the UI marks it "to confirm".
 
 export const FACTS = {
   brand: {
@@ -40,12 +39,14 @@ export const FACTS = {
   },
   kpi: {
     briefToPlanHours: 48,
-    opsHoursPerMission: 39,
-    opsHoursManual: { value: 182, confirm: true },
+    opsHoursPerMission: 38.5,
+    opsHoursManual: 182,
+    opsHoursSaving: 0.79, // 1 − 38.5 / 182
     apartmentsPerAgent: 150,
-    breakEvenApartments: { value: 235, confirm: true },
+    breakEvenApartments: 235, // occupied apartments
   },
-  lease: { minDays: 31, maxMonths: 12, month6Exit: true },
+  lease: { minDays: 31, maxMonths: 12, tenantExitAfterMonths: 1, exitNoticeDays: 10 },
+  vatNote: 'VAT excluded on demo totals',
   mvpTool: 'Claude Code (paid)',
 } as const;
 

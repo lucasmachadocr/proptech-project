@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { AiBadge, Explain, ToConfirm } from '../../components/ui';
+import { AiBadge, Explain } from '../../components/ui';
+import { pct } from '../../lib/format';
 import { FACTS } from '../../data/facts';
 import { useStore } from '../../store';
 
@@ -8,7 +9,7 @@ const K = FACTS.kpi;
 export default function KpiPage() {
   const plan = useStore((s) => s.plan);
   const occupied = plan?.metrics.apartments ?? 0;
-  const be = K.breakEvenApartments.value;
+  const be = K.breakEvenApartments;
 
   return (
     <div className="space-y-8">
@@ -25,12 +26,12 @@ export default function KpiPage() {
           value={`${K.opsHoursPerMission} h`}
           sub={
             <>
-              vs {K.opsHoursManual.value} h done by hand <ToConfirm />
+              vs {K.opsHoursManual} h done by hand (−{pct(K.opsHoursSaving)})
             </>
           }
           ai
-          explain="Hours of operations work for a mission with Settle In, compared with organising the same housing manually. Basis of the manual figure to be confirmed."
-          bar={K.opsHoursPerMission / K.opsHoursManual.value}
+          explain="Hours of operations work for a mission with Settle In, compared with organising the same housing manually (business plan v11)."
+          bar={K.opsHoursPerMission / K.opsHoursManual}
         />
         <Tile label="Apartments per support agent" value={`1 : ${K.apartmentsPerAgent}`} sub="AI first line + one agent" ai explain="Each support agent covers 150 occupied apartments; the AI assistant answers and triages first." />
         <Tile
@@ -38,10 +39,10 @@ export default function KpiPage() {
           value={`${occupied} / ${be}`}
           sub={
             <>
-              occupied apartments <ToConfirm />
+              occupied apartments needed to break even
             </>
           }
-          explain={`Apartments occupied in approved missions in this demo, against the ${be} occupied apartments needed to break even (unit and period to be confirmed).`}
+          explain={`Apartments occupied in approved missions in this demo, against the ${be} occupied apartments needed to break even.`}
           bar={occupied / be}
         />
       </div>

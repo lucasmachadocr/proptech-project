@@ -78,15 +78,6 @@ export function Explain({ children, label = 'How is this calculated?' }: { child
   );
 }
 
-/** Marks a number that is not yet in the v11 summary (SETTLE_IN_FACTS.md status CONFIRM). */
-export function ToConfirm() {
-  return (
-    <span title="Assumption to be confirmed by the team (see SETTLE_IN_FACTS.md)" className="ml-1 rounded bg-amber-100 px-1 py-0.5 text-[10px] font-semibold tracking-wide text-amber-900 uppercase">
-      to confirm
-    </span>
-  );
-}
-
 export function Kpi({ label, value, hint, ai, explain, testId }: { label: string; value: ReactNode; hint?: ReactNode; ai?: boolean; explain?: ReactNode; testId?: string }) {
   return (
     <div className="rounded-2xl border border-stone-200 bg-white px-5 py-4" data-testid={testId}>
