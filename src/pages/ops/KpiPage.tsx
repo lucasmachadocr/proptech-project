@@ -1,56 +1,75 @@
-import { AiBadge, Badge, Card, PageHeader } from '../../components/ui';
+import { Link } from 'react-router-dom';
+import { AiBadge, Explain, ToConfirm } from '../../components/ui';
+import { FACTS } from '../../data/facts';
 import { useStore } from '../../store';
 
-interface KpiDef {
-  name: string;
-  why: string;
-  target: string;
-  actual: string;
-  progress: number; // 0..1 share of target achieved (1 = on target)
-  ok: boolean;
-  ai?: boolean;
-}
+const K = FACTS.kpi;
 
 export default function KpiPage() {
-  const { plan, incidents } = useStore();
-  const urgentLive = incidents.length;
-  // Illustrative pilot figures; incidents include those reported in this demo session.
-  const slaTotal = 26 + urgentLive;
-  const slaMet = 25 + urgentLive;
-  const kpis: KpiDef[] = [
-    { name: 'Time from brief to approved plan', why: 'Proves the AI advantage over manual search', target: '< 48 h', actual: plan ? `${plan.computedMs} ms engine + 6 h review` : '6 h (pilot avg)', progress: 1, ok: true, ai: true },
-    { name: 'Unit verification time', why: 'Speed of supply growth', target: '< 3 days / unit', actual: '1.8 days', progress: 1, ok: true, ai: true },
-    { name: 'Occupied units per operations FTE', why: 'Scalability of the team', target: '≥ 150', actual: '150 (15 units · 0.1 FTE)', progress: 1, ok: true },
-    { name: 'Incidents solved within SLA', why: 'Service quality for occupants', target: '≥ 95%', actual: `${((slaMet / slaTotal) * 100).toFixed(1)}% (${slaMet}/${slaTotal})`, progress: Math.min(1, slaMet / slaTotal / 0.95), ok: slaMet / slaTotal >= 0.95, ai: true },
-    { name: 'Days sales outstanding (DSO)', why: 'Cash and credit risk', target: '< 35 days', actual: '31 days', progress: 1, ok: true },
-    { name: 'Payout accuracy', why: 'Provider trust', target: '≥ 99.5%', actual: '99.8%', progress: 1, ok: true },
-  ];
+  const plan = useStore((s) => s.plan);
+  const occupied = plan?.metrics.apartments ?? 0;
+  const be = K.breakEvenApartments.value;
+
   return (
-    <>
-      <PageHeader
-        eyebrow="Operations · KPI dashboard"
-        title="Operating KPIs reported to investors"
-        subtitle="Year-1 targets from the operations plan (Section 5.8). Actuals shown are illustrative pilot figures for the demo."
-      />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {kpis.map((k) => (
-          <Card key={k.name}>
-            <div className="flex items-start justify-between gap-2">
-              <h2 className="text-sm font-semibold text-stone-900">{k.name}</h2>
-              <div className="flex shrink-0 gap-1">
-                {k.ai && <AiBadge />}
-                <Badge tone={k.ok ? 'green' : 'amber'}>{k.ok ? 'On target' : 'Watch'}</Badge>
-              </div>
-            </div>
-            <p className="mt-1 text-xs text-stone-500">{k.why}</p>
-            <div className="num mt-4 text-2xl font-semibold tracking-tight text-stone-900">{k.actual}</div>
-            <div className="mt-1 text-xs text-stone-500">Target {k.target}</div>
-            <div className="mt-3 h-1.5 rounded-full bg-stone-100" aria-hidden>
-              <div className={`h-1.5 rounded-full ${k.ok ? 'bg-brand-600' : 'bg-amber-500'}`} style={{ width: `${k.progress * 100}%` }} />
-            </div>
-          </Card>
-        ))}
+    <div className="space-y-8">
+      <div>
+        <p className="text-sm font-semibold tracking-widest text-brand-700 uppercase">Ops · KPIs</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">Operating targets from the business plan</h1>
+        <p className="mt-2 text-lg text-stone-600">What we report to investors every month.</p>
       </div>
-    </>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="kpi-strip">
+        <Tile label="Brief → plan" value={`≤ ${K.briefToPlanHours} h`} sub="Target, including human review" ai explain="The engine matches in milliseconds; the target covers the Ops review and operator confirmations." />
+        <Tile
+          label="Ops hours per mission"
+          value={`${K.opsHoursPerMission} h`}
+          sub={
+            <>
+              vs {K.opsHoursManual.value} h done by hand <ToConfirm />
+            </>
+          }
+          ai
+          explain="Hours of operations work for a mission with Settle In, compared with organising the same housing manually. Basis of the manual figure to be confirmed."
+          bar={K.opsHoursPerMission / K.opsHoursManual.value}
+        />
+        <Tile label="Apartments per support agent" value={`1 : ${K.apartmentsPerAgent}`} sub="AI first line + one agent" ai explain="Each support agent covers 150 occupied apartments; the AI assistant answers and triages first." />
+        <Tile
+          label="Occupancy vs break-even"
+          value={`${occupied} / ${be}`}
+          sub={
+            <>
+              occupied apartments <ToConfirm />
+            </>
+          }
+          explain={`Apartments occupied in approved missions in this demo, against the ${be} occupied apartments needed to break even (unit and period to be confirmed).`}
+          bar={occupied / be}
+        />
+      </div>
+
+      <p className="text-sm text-stone-600">
+        Risks behind these targets: <Link to="/ops/risks" className="font-medium text-ink underline underline-offset-4">risk register →</Link>
+      </p>
+    </div>
+  );
+}
+
+function Tile({ label, value, sub, explain, ai, bar }: { label: string; value: string; sub: React.ReactNode; explain: string; ai?: boolean; bar?: number }) {
+  return (
+    <div className="rounded-2xl border border-stone-200 bg-white p-5">
+      <div className="flex items-center justify-between gap-2 text-sm text-stone-600">
+        <span className="flex items-center gap-1.5">
+          {label}
+          <Explain>{explain}</Explain>
+        </span>
+        {ai && <AiBadge />}
+      </div>
+      <div className="num mt-2 text-3xl font-semibold text-ink">{value}</div>
+      <div className="mt-1 text-sm text-stone-600">{sub}</div>
+      {bar !== undefined && (
+        <div className="mt-3 h-1.5 rounded-full bg-stone-100" aria-hidden>
+          <div className="h-1.5 rounded-full bg-brand-600" style={{ width: `${Math.min(100, Math.max(2, bar * 100))}%` }} />
+        </div>
+      )}
+    </div>
   );
 }

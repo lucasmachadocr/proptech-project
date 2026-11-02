@@ -5,14 +5,18 @@ import { Badge, Card, Kpi, LinkButton, PageHeader, inputCls, tableCls, tableWrap
 import { PROVIDERS } from '../../data/providers';
 import { addMonths, formatDate, stayEnd } from '../../lib/dates';
 import { eur, eurCents } from '../../lib/format';
-import { landlordCommission, providerPayout } from '../../lib/money';
+import { FACTS } from '../../data/facts';
+import { operatorPayout } from '../../lib/money';
+
+const providerPayout = operatorPayout;
+const landlordCommission = (rent: number) => rent * FACTS.pricing.operatorCommission;
 import { useStore } from '../../store';
 
 const STATUS = { verified: { tone: 'green', label: 'Verified' }, pending: { tone: 'amber', label: 'In verification' }, rejected: { tone: 'red', label: 'Rejected' } } as const;
 
 export default function ProviderPage() {
   const { units, plan, brief } = useStore();
-  const [providerId, setProviderId] = useState('P04');
+  const [providerId, setProviderId] = useState('P01');
   const provider = PROVIDERS.find((p) => p.id === providerId)!;
   const mine = useMemo(() => units.filter((u) => u.providerId === providerId), [units, providerId]);
   const occupied = new Map((plan?.assignments ?? []).map((a) => [a.unitId, a]));
@@ -22,7 +26,7 @@ export default function ProviderPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Provider portal"
+        eyebrow="Operator portal"
         title={provider.name}
         subtitle={`${provider.legalName} · CIF ${provider.cif} · ${provider.city}. Professional operators list furnished units once; we fill them with verified corporate tenants and pay out every month.`}
         actions={
@@ -46,7 +50,7 @@ export default function ProviderPage() {
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi label="Listed units" value={mine.length} hint={`${mine.filter((u) => u.status === 'verified').length} verified`} />
         <Kpi label="Occupied by project teams" value={rented.length} hint={plan ? brief.projectName : 'No active plan'} />
-        <Kpi label="Monthly payout" value={eurCents(providerPayout(monthlyRent))} hint={`${eur(monthlyRent)} rent − 10% commission`} />
+        <Kpi label="Monthly payout" value={eurCents(providerPayout(monthlyRent))} hint={`${eur(monthlyRent)} rent − 6% commission`} />
         <Kpi label="Provider status" value={<Badge tone={STATUS[provider.status].tone}>{STATUS[provider.status].label}</Badge>} hint={`Since ${formatDate(provider.joined)}`} />
       </div>
 
@@ -117,7 +121,7 @@ export default function ProviderPage() {
                 <tr className="text-left text-xs font-semibold tracking-wide text-stone-500 uppercase">
                   <th className="py-2">Payout date</th>
                   <th className="py-2 text-right">Rent collected</th>
-                  <th className="py-2 text-right">Commission 10%</th>
+                  <th className="py-2 text-right">Commission 6%</th>
                   <th className="py-2 text-right">Paid to you</th>
                 </tr>
               </thead>

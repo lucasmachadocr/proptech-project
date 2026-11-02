@@ -14,9 +14,10 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [company, setCompany] = useState({ name: 'Moncayo Living S.L.', cif: 'B50000000', contact: 'ops@moncayoliving.example', units: '8' });
   const [docs, setDocs] = useState<boolean[]>(DOCS.map((_, i) => i < 2));
-  const [unit, setUnit] = useState<{ type: UnitType; zone: string; rent: number; sqm: number }>({ type: '1bed', zone: 'Actur', rent: 1750, sqm: 48 });
+  const [unit, setUnit] = useState<{ type: UnitType; zone: string; rent: number; sqm: number }>({ type: '1bed', zone: 'Coslada', rent: 1950, sqm: 48 });
 
-  const probe = { ...units[0], id: 'NEW', type: unit.type, zone: unit.zone, town: unit.zone, rent: unit.rent, ...ZONE_CENTROIDS[unit.zone] } as Unit;
+  const z = ZONE_CENTROIDS[unit.zone];
+  const probe = { ...units[0], id: 'NEW', type: unit.type, zone: unit.zone, town: z.town, city: z.city, rent: unit.rent, lat: z.lat, lng: z.lng } as Unit;
   const med = areaMedian(probe, units);
   const dev = (unit.rent - med) / med;
 
@@ -126,7 +127,7 @@ export default function OnboardingPage() {
         {step === 3 && (
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="text-sm sm:col-span-2">
-              <p className="text-stone-600">Payouts are made by our licensed payment provider on the 5th of each month: rent minus a 10% commission. No fees to list.</p>
+              <p className="text-stone-600">Payouts are made by our licensed payment provider at check-in, then monthly: rent minus a 6% commission. No fees to list.</p>
             </div>
             <div className={labelCls}>
               Bank account
