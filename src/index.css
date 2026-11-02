@@ -7,21 +7,24 @@
 
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  /* Brand: terracotta from the "settle in" logo (#C9573A) on warm cream. */
-  --color-brand-50: #fdf3ee;
-  --color-brand-100: #fae3d8;
-  --color-brand-200: #f4c5b1;
-  --color-brand-300: #eca285;
-  --color-brand-400: #e07a57;
-  --color-brand-500: #d4633f;
-  --color-brand-600: #c9573a;
-  --color-brand-700: #a8432e;
-  --color-brand-800: #8a3727;
-  --color-brand-900: #6e2d21;
-  --color-cream: #faf4ee;
+  /* Brand (business plan v11): terracotta #C4573D, cream #F7EEE7, ink #2A2320. */
+  --color-brand-50: #fbf2ee;
+  --color-brand-100: #f6e0d7;
+  --color-brand-200: #ecc0ae;
+  --color-brand-300: #e09b80;
+  --color-brand-400: #d27657;
+  --color-brand-500: #c4573d; /* logo terracotta (v11) */
+  --color-brand-600: #c4573d;
+  --color-brand-700: #a8462f;
+  --color-brand-800: #8a3826;
+  --color-brand-900: #6c2c1f;
+  --color-cream: #f7eee7; /* v11 */
+  --color-ink: #2a2320; /* v11 */
 }
 
-html { background: var(--color-cream); color: var(--color-stone-900); }
+html { background: var(--color-cream); color: var(--color-ink); }
+/* Projector-friendly type scale on laptops and up. */
+@media (min-width: 1024px) { html { font-size: 17px; } }
 body { font-feature-settings: 'cv11', 'ss01'; }
 :focus-visible { outline: 2px solid var(--color-brand-700); outline-offset: 2px; border-radius: 4px; }
 .num { font-variant-numeric: tabular-nums; }
@@ -32,3 +35,6 @@ body { font-feature-settings: 'cv11', 'ss01'; }
 .safe-top { padding-top: env(safe-area-inset-top); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); -webkit-tap-highlight-color: transparent; }
+/* Neighbourhood labels on the city map. */
+.leaflet-tooltip.zone-label { background: transparent; border: 0; box-shadow: none; color: #57534e; font-size: 11px; font-weight: 600; text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
+.leaflet-tooltip.zone-label::before { display: none; }

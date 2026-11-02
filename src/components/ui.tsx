@@ -56,15 +56,49 @@ export function Card({ children, className, title, actions, id }: { children: Re
   );
 }
 
-export function Kpi({ label, value, hint, ai }: { label: string; value: ReactNode; hint?: ReactNode; ai?: boolean }) {
+/** "How is this calculated?" — small ? button with a popover; works on hover, focus and tap. */
+export function Explain({ children, label = 'How is this calculated?' }: { children: ReactNode; label?: string }) {
   return (
-    <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-      <div className="flex items-center justify-between gap-2 text-xs font-medium text-stone-500">
-        <span>{label}</span>
+    <span className="group relative inline-flex align-middle">
+      <button
+        type="button"
+        aria-label={label}
+        className="grid h-5 w-5 place-items-center rounded-full border border-stone-300 bg-white text-[11px] font-bold text-stone-500 hover:border-brand-600 hover:text-brand-700 focus-visible:border-brand-600"
+      >
+        ?
+      </button>
+      <span
+        role="tooltip"
+        className="pointer-events-none invisible absolute bottom-full left-1/2 z-[700] mb-2 w-64 -translate-x-1/2 rounded-lg bg-ink px-3 py-2 text-left text-xs leading-relaxed font-normal text-white opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
+      >
+        <span className="mb-1 block font-semibold">{label}</span>
+        {children}
+      </span>
+    </span>
+  );
+}
+
+/** Marks a number that is not yet in the v11 summary (SETTLE_IN_FACTS.md status CONFIRM). */
+export function ToConfirm() {
+  return (
+    <span title="Assumption to be confirmed by the team (see SETTLE_IN_FACTS.md)" className="ml-1 rounded bg-amber-100 px-1 py-0.5 text-[10px] font-semibold tracking-wide text-amber-900 uppercase">
+      to confirm
+    </span>
+  );
+}
+
+export function Kpi({ label, value, hint, ai, explain, testId }: { label: string; value: ReactNode; hint?: ReactNode; ai?: boolean; explain?: ReactNode; testId?: string }) {
+  return (
+    <div className="rounded-2xl border border-stone-200 bg-white px-5 py-4" data-testid={testId}>
+      <div className="flex items-center justify-between gap-2 text-sm font-medium text-stone-600">
+        <span className="flex items-center gap-1.5">
+          {label}
+          {explain && <Explain>{explain}</Explain>}
+        </span>
         {ai && <AiBadge />}
       </div>
-      <div className="num mt-1 text-2xl font-semibold tracking-tight text-stone-900">{value}</div>
-      {hint && <div className="mt-0.5 text-xs text-stone-500">{hint}</div>}
+      <div className="num mt-1 text-3xl font-semibold tracking-tight text-ink">{value}</div>
+      {hint && <div className="mt-1 text-sm text-stone-600">{hint}</div>}
     </div>
   );
 }

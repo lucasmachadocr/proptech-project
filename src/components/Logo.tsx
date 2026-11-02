@@ -4,9 +4,9 @@ import { APP_NAME } from '../config';
 export function LogoMark({ className = 'h-8 w-7' }: { className?: string }) {
   return (
     <svg viewBox="0 0 48 56" className={className} aria-hidden>
-      <path d="M0 24a24 24 0 0 1 48 0v32H0z" fill="#c9573a" />
-      <path d="M15 31a9 9 0 0 1 18 0v25H15z" fill="#faf4ee" />
-      <circle cx="24" cy="42" r="2.6" fill="#c9573a" />
+      <path d="M0 24a24 24 0 0 1 48 0v32H0z" fill="#c4573d" />
+      <path d="M15 31a9 9 0 0 1 18 0v25H15z" fill="#f7eee7" />
+      <circle cx="24" cy="42" r="2.6" fill="#c4573d" />
     </svg>
   );
 }

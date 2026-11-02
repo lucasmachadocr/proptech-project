@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import DemoPage from './pages/demo/DemoPage';
+import ReviewPage from './pages/ops/ReviewPage';
 import BriefPage from './pages/client/BriefPage';
 import PlanPage from './pages/client/PlanPage';
 import ChangePage from './pages/client/ChangePage';
@@ -21,8 +22,8 @@ export default function App() {
     <HashRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route index element={<Navigate to="/demo" replace />} />
-          <Route path="demo" element={<DemoPage />} />
+          <Route index element={<DemoPage />} />
+          <Route path="demo" element={<Navigate to="/" replace />} />
           <Route path="client" element={<Navigate to="/client/brief" replace />} />
           <Route path="client/brief" element={<BriefPage />} />
           <Route path="client/plan" element={<PlanPage />} />
@@ -31,7 +32,8 @@ export default function App() {
           <Route path="provider" element={<ProviderPage />} />
           <Route path="provider/onboarding" element={<OnboardingPage />} />
           <Route path="employee" element={<EmployeePage />} />
-          <Route path="ops" element={<Navigate to="/ops/verification" replace />} />
+          <Route path="ops" element={<Navigate to="/ops/review" replace />} />
+          <Route path="ops/review" element={<ReviewPage />} />
           <Route path="ops/verification" element={<VerificationPage />} />
           <Route path="ops/compliance" element={<CompliancePage />} />
           <Route path="ops/leases" element={<LeasesPage />} />
@@ -39,7 +41,7 @@ export default function App() {
           <Route path="ops/kpis" element={<KpiPage />} />
           <Route path="ops/risks" element={<RisksPage />} />
           <Route path="about-tech" element={<AboutTechPage />} />
-          <Route path="*" element={<Navigate to="/demo" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </HashRouter>

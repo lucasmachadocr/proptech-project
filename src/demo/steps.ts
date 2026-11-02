@@ -1,43 +1,65 @@
-// The scripted 5-step investor demo. Each step prepares whatever it needs, so steps can run
-// in any order, and returns the route to open.
+// The scripted 3-minute investor demo: Brief → Plan → Approve → Re-plan → Invoice.
+// Each step prepares whatever it needs (so steps can run in any order) and returns the route to open.
 import { DEMO_BRIEF } from '../data/brief';
-import { FRAUD_UNIT_ID } from '../data/units';
 import { ensureDemoPlan, useStore } from '../store';
 
 export interface DemoStep {
   n: number;
+  key: 'brief' | 'plan' | 'approve' | 'replan' | 'invoice';
   title: string;
-  button: string;
   say: string;
-  where: string;
-  ai: boolean;
   run: () => string;
+}
+
+/** Base demo plan, already released by Ops (used by steps 3–5). */
+function ensureReleased() {
+  ensureDemoPlan();
+  const s = useStore.getState();
+  if (!s.reviewedAt) s.releasePlan();
 }
 
 export const DEMO_STEPS: DemoStep[] = [
   {
     n: 1,
-    title: 'One brief → one housing plan',
-    button: 'Allocate 15 employees',
-    say: '15 people, 6 months, Microsoft campus area, ≤ 30 min commute and per-role budgets. The engine evaluates every person × unit pair and explains its trade-offs.',
-    where: 'Client · Plan',
-    ai: true,
+    key: 'brief',
+    title: 'Brief',
+    say: 'A company needs 20 engineers in Madrid for 6 months. Instead of 20 searches, it sends one brief: who, where, how long, budget.',
     run: () => {
-      const s = useStore.getState();
-      s.setBrief(DEMO_BRIEF);
-      s.runAllocation();
-      return '/client/plan';
+      useStore.getState().setBrief(DEMO_BRIEF);
+      return '/client/brief';
     },
   },
   {
     n: 2,
-    title: 'The project changes, the plan follows',
-    button: 'Extend 2 months + 3 engineers',
-    say: 'Three units are not free for the extra months. Only those three people move, three new engineers are housed, and the client sees the cost delta before approving.',
-    where: 'Client · Changes',
-    ai: true,
+    key: 'plan',
+    title: 'Plan',
+    say: 'Our AI matches all 20 people to verified apartments near the site in seconds. Before the client sees it, our ops team reviews the plan — target under 48 hours from brief to plan.',
     run: () => {
-      ensureDemoPlan();
+      const s = useStore.getState();
+      if (!s.plan) {
+        s.setBrief(DEMO_BRIEF);
+        useStore.getState().runAllocation();
+      }
+      return '/ops/review';
+    },
+  },
+  {
+    n: 3,
+    key: 'approve',
+    title: 'Approve',
+    say: 'The client sees one plan on a map: every apartment, every commute, one monthly price. One click approves the whole team.',
+    run: () => {
+      ensureReleased();
+      return '/client/plan';
+    },
+  },
+  {
+    n: 4,
+    key: 'replan',
+    title: 'Re-plan',
+    say: 'Projects change. The mission is extended 2 months and 3 engineers join. Only the people whose apartment is not free for the new dates move; the client sees the cost change before approving.',
+    run: () => {
+      ensureReleased();
       const s = useStore.getState();
       if (!s.approvedAt) s.approvePlan();
       s.proposeChange(2, 3);
@@ -45,47 +67,22 @@ export const DEMO_STEPS: DemoStep[] = [
     },
   },
   {
-    n: 3,
-    title: 'Verification catches a fraudulent listing',
-    button: 'Run verification on the queue',
-    say: 'A new provider lists a cheap flat in the centre. Its photos belong to another listing, the price is 40% below the area median and the owner on the deed does not match the company.',
-    where: 'Operations · Verification',
-    ai: true,
-    run: () => {
-      useStore.getState().setUnitStatus(FRAUD_UNIT_ID, 'pending');
-      return `/ops/verification?focus=${FRAUD_UNIT_ID}`;
-    },
-  },
-  {
-    n: 4,
-    title: 'Compliance blocks a non-compliant lease',
-    button: 'Check a non-compliant lease',
-    say: 'Under Royal Decree-Law 29/2026 a seasonal lease needs a documented work cause, more than 31 days and at most 12 months, no third consecutive lease and at most a one-month guarantee. Red means no signature.',
-    where: 'Operations · Compliance',
-    ai: false,
-    run: () => {
-      ensureDemoPlan();
-      return '/ops/compliance?scenario=noncompliant';
-    },
-  },
-  {
     n: 5,
-    title: 'One invoice: GMV vs our revenue',
-    button: 'Show the money',
-    say: '€162,000 of rent becomes €174,960 invoiced. Rent sits at a licensed payment provider, never on our balance sheet. We keep 18%: €29,160.',
-    where: 'Operations · Payments ledger',
-    ai: false,
+    key: 'invoice',
+    title: 'Invoice',
+    say: 'One invoice for the whole mission: rent, our markup and the optional Flex as separate lines, collected by SEPA monthly in advance. Operators are paid at check-in.',
     run: () => {
-      ensureDemoPlan();
-      return '/ops/ledger';
+      ensureReleased();
+      const s = useStore.getState();
+      if (!s.approvedAt) s.approvePlan();
+      return '/client/invoice';
     },
   },
 ];
 
-/** Runs step n, remembers it for the guided demo bar and returns the route to open. */
+/** Runs step n, remembers it for the stepper and returns the route to open. */
 export function startStep(n: number): string {
-  const step = DEMO_STEPS[n - 1];
-  const route = step.run();
+  const route = DEMO_STEPS[n - 1].run();
   useStore.getState().setDemoStep(n);
   return route;
 }

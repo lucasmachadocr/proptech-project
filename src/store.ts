@@ -32,7 +32,9 @@ export interface ChangeRequest {
 interface State {
   brief: Brief;
   plan: Plan | null;
-  approvedAt: string | null;
+  reviewedAt: string | null; // released by the Ops team after plan review
+  approvedAt: string | null; // approved by the client company
+  flex: boolean; // Flex option on the mission
   change: ChangeRequest | null;
   units: Unit[];
   signed: SignedLease[];
@@ -42,6 +44,8 @@ interface State {
   setBrief: (b: Brief) => void;
   runAllocation: () => Plan;
   approvePlan: () => void;
+  releasePlan: () => void;
+  setFlex: (on: boolean) => void;
   proposeChange: (extendMonths: number, addEngineers: number) => ChangeRequest;
   applyChange: () => void;
   setUnitStatus: (unitId: string, status: VerificationStatus) => void;
@@ -53,7 +57,9 @@ interface State {
 const initial = () => ({
   brief: DEMO_BRIEF,
   plan: null as Plan | null,
+  reviewedAt: null as string | null,
   approvedAt: null as string | null,
+  flex: true,
   change: null as ChangeRequest | null,
   units: UNITS,
   signed: [] as SignedLease[],
@@ -65,13 +71,15 @@ export const useStore = create<State>()(
     (set, get) => ({
       ...initial(),
       demoStep: null,
-      setBrief: (brief) => set({ brief, plan: null, approvedAt: null, change: null, signed: [] }),
+      setBrief: (brief) => set({ brief, plan: null, reviewedAt: null, approvedAt: null, change: null, signed: [] }),
       runAllocation: () => {
         const plan = allocate(get().brief, get().units);
-        set({ plan, approvedAt: null, change: null, signed: [] });
+        set({ plan, reviewedAt: null, approvedAt: null, change: null, signed: [] });
         return plan;
       },
-      approvePlan: () => set({ approvedAt: new Date().toISOString() }),
+      approvePlan: () => set({ approvedAt: new Date().toISOString(), reviewedAt: get().reviewedAt ?? new Date().toISOString() }),
+      releasePlan: () => set({ reviewedAt: new Date().toISOString() }),
+      setFlex: (flex) => set({ flex }),
       proposeChange: (extendMonths, addEngineers) => {
         const { brief, plan, units } = get();
         const base = plan ?? get().runAllocation();
@@ -96,14 +104,16 @@ export const useStore = create<State>()(
       reset: () => set({ ...initial(), demoStep: null }),
     }),
     {
-      name: 'settle-in-demo-v1',
-      version: 1,
+      name: 'settle-in-demo-v11',
+      version: 11,
       storage: createJSONStorage(() => localStorage),
       // Persist only verification decisions, not the unit catalogue, so seed updates always apply.
       partialize: (s) => ({
         brief: s.brief,
         plan: s.plan,
+        reviewedAt: s.reviewedAt,
         approvedAt: s.approvedAt,
+        flex: s.flex,
         change: s.change,
         signed: s.signed,
         incidents: s.incidents,
