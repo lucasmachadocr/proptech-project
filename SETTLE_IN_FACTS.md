@@ -35,6 +35,16 @@ To change a number, edit this table and `facts.ts` together.
 | demo.flexPool | 2255 | derived | 1% of rent |
 | demo.directCostPerApartmentMonth | 36 | v11 | |
 | demo.directCost | 4320 | derived | 36 × 120 |
+| options.A | 1935 / 31 | v11 | lowest cost: € per apartment-month (all-in) / average commute min |
+| options.B | 1992 / 22 | v11 | balanced — recommended and released |
+| options.C | 2140 / 12 | v11 | closest |
+| replan.people | 3 | v11 | engineers join from month 3, no extension |
+| replan.fromMonth | 3 | v11 | |
+| replan.months | 4 | derived | months 3–6 |
+| replan.pricePerApartmentMonth | 1992 | derived | mission average: 239,034 ÷ 120 |
+| replan.delta | 23904 | v11 | 3 × 1,992 × 4 |
+| replan.apartmentsAfter | 23 | v11 | still the 4% tier (10–24) |
+| replan.moved | 0 | v11 | nobody already housed moves |
 | kpi.briefToPlanHours | 48 | v11 | target, at most |
 | kpi.opsHoursPerMission | 38.5 | v11 | ops hours per mission with Settle In |
 | kpi.opsHoursManual | 182 | v11 | ops hours per mission done by hand |
@@ -56,3 +66,4 @@ To change a number, edit this table and `facts.ts` together.
 - Flex pool (operators): 225,504 × 0.01 = **€2,255**
 - Operator payout: 225,504 × 0.94 = **€211,974**, plus the Flex pool
 - Direct cost: 120 × €36 = **€4,320**; contribution ≈ **€20,485**
+- Re-plan: 3 engineers × €1,992 × 4 months = **+€23,904**; 23 apartments → still 4% tier

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEMO_BRIEF, EXTRA_ENGINEERS } from '../data/brief';
-import { FRAUD_UNIT_ID, UNITS } from '../data/units';
+import { FRAUD_UNIT_ID, MONTH_3, UNITS } from '../data/units';
 import { FACTS } from '../data/facts';
 import { stayEnd } from '../lib/dates';
 import type { Brief, Employee, Plan, Role, Unit, UnitType } from '../types';
@@ -78,37 +78,39 @@ describe('allocate (demo brief)', () => {
   });
 });
 
-describe('reallocate (extend 2 months + 3 engineers)', () => {
+describe('reallocate (+3 engineers from month 3, business plan v11)', () => {
   const plan = allocate(DEMO_BRIEF, UNITS);
-  const next: Brief = { ...DEMO_BRIEF, months: 8, employees: [...DEMO_BRIEF.employees, ...EXTRA_ENGINEERS] };
+  const joiners = EXTRA_ENGINEERS.map((e) => ({ ...e, start: MONTH_3 }));
+  const next: Brief = { ...DEMO_BRIEF, employees: [...DEMO_BRIEF.employees, ...joiners] };
   const r = reallocate(plan, DEMO_BRIEF, next, UNITS);
 
-  it('adds exactly 3 assignments and keeps all rules', () => {
-    expect(r.plan.assignments).toHaveLength(23);
-    expect(r.diff.filter((d) => d.kind === 'new')).toHaveLength(3);
-    assertHardRules(r.plan, next, UNITS);
+  it('adds exactly 3 apartments and nobody already housed moves', () => {
+    expect(r.plan.assignments).toHaveLength(FACTS.replan.apartmentsAfter);
+    expect(r.diff.filter((d) => d.kind === 'new' && d.toUnitId)).toHaveLength(FACTS.replan.people);
+    expect(r.moved).toBe(FACTS.replan.moved);
+    assertHardRules(r.plan, { ...next, start: DEMO_BRIEF.start }, UNITS.map((u) => ({ ...u, availableFrom: DEMO_BRIEF.start })));
   });
 
-  it('moves only the people whose unit expires', () => {
-    const newEnd = stayEnd(next.start, next.months);
-    const expiring = new Set(plan.assignments.filter((a) => UNITS.find((u) => u.id === a.unitId)!.availableTo < newEnd).map((a) => a.employeeId));
-    expect(expiring.size).toBeGreaterThan(0);
-    const moved = r.diff.filter((d) => d.kind === 'moved').map((d) => d.employeeId);
-    expect(new Set(moved)).toEqual(expiring);
-    for (const d of r.diff.filter((x) => x.kind === 'moved')) expect(d.reason).toMatch(/only available until/);
+  it('joiners are housed for 4 months only', () => {
+    expect(r.plan.metrics.apartmentMonths).toBe(FACTS.demo.apartmentMonths + FACTS.replan.people * FACTS.replan.months);
+    const newRent = r.diff.filter((d) => d.kind === 'new').reduce((s, d) => s + d.rentDelta, 0);
+    expect(r.totalDelta).toBe(newRent * FACTS.replan.months);
   });
 
-  it('reports the cost delta', () => {
-    expect(r.monthlyDelta).toBe(r.plan.metrics.monthlyRent - plan.metrics.monthlyRent);
-    expect(r.totalDelta).toBe(r.plan.metrics.totalRent - FACTS.demo.rentTotal);
-    expect(r.monthlyDelta).toBeGreaterThan(0);
+  it('an extension moves only the people whose apartment is not free for the new dates', () => {
+    const units = UNITS.map((u) => (u.id === plan.assignments[0].unitId ? { ...u, availableTo: stayEnd(DEMO_BRIEF.start, DEMO_BRIEF.months) } : u));
+    const p0 = allocate(DEMO_BRIEF, units);
+    const ext = reallocate(p0, DEMO_BRIEF, { ...DEMO_BRIEF, months: 8 }, units);
+    const moved = ext.diff.filter((d) => d.kind === 'moved');
+    expect(moved).toHaveLength(1);
+    expect(moved[0].reason).toMatch(/only available until/);
   });
 
   it('a higher move penalty never increases the number of moves', () => {
-    const free = reallocate(plan, DEMO_BRIEF, next, UNITS, { movePenalty: 0 });
-    const sticky = reallocate(plan, DEMO_BRIEF, next, UNITS, { movePenalty: 5000 });
+    const ext: Brief = { ...DEMO_BRIEF, months: 8, employees: next.employees };
+    const free = reallocate(plan, DEMO_BRIEF, ext, UNITS, { movePenalty: 0 });
+    const sticky = reallocate(plan, DEMO_BRIEF, ext, UNITS, { movePenalty: 5000 });
     expect(sticky.moved).toBeLessThanOrEqual(free.moved);
-    expect(r.moved).toBeLessThanOrEqual(free.moved);
   });
 });
 

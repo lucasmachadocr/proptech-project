@@ -58,5 +58,15 @@ export function moneySplit(rent: number, apartments: number, withFlex = true): S
   };
 }
 
+/** Company price per apartment-month for a mission: (rent + markup + Flex) ÷ apartment-months, rounded to €. */
+export function missionPricePerApartmentMonth(totalRent: number, apartments: number, apartmentMonths: number, withFlex = true): number {
+  return Math.round(companyInvoice(totalRent, apartments, withFlex).total / apartmentMonths);
+}
+
+/** Re-plan cost shown before approval: new people are priced at the mission's average apartment-month. */
+export function replanCost(pricePerApartmentMonth: number, people: number, months: number): number {
+  return people * pricePerApartmentMonth * months;
+}
+
 export const operatorPayout = (rent: number) => cents(rent * (1 - P.operatorCommission));
 export const directCost = (apartmentMonths: number) => apartmentMonths * FACTS.demo.directCostPerApartmentMonth;

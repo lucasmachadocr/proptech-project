@@ -1,4 +1,6 @@
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DEFAULT_LAMBDA, LAMBDA_CLOSEST, LAMBDA_LOWEST_COST, allocate } from '../../ai/allocate';
 import { checkLease } from '../../ai/compliance';
 import CityMap from '../../components/CityMap';
 import { AiBadge, Badge, Explain, LinkButton, cx } from '../../components/ui';
@@ -7,13 +9,20 @@ import { FACTS } from '../../data/facts';
 import { siteById } from '../../data/sites';
 import { stayEnd } from '../../lib/dates';
 import { eur } from '../../lib/format';
+import { companyInvoice } from '../../lib/money';
+import type { Plan } from '../../types';
 import { draftForAssignment } from '../../lib/leaseDrafts';
 import { useStore } from '../../store';
 
 /** Ops plan review queue: the team checks every AI plan before the client sees it. */
 export default function ReviewPage() {
   const navigate = useNavigate();
-  const { brief, plan, units, reviewedAt, releasePlan, demoStep, setDemoStep } = useStore();
+  const { brief, plan, units, reviewedAt, releasePlan, demoStep, setDemoStep, flex } = useStore();
+  const [preview, setPreview] = useState<'A' | 'B' | 'C'>('B');
+  const options = useMemo(() => {
+    if (!plan) return null;
+    return { A: allocate(brief, units, { lambda: LAMBDA_LOWEST_COST }), B: plan, C: allocate(brief, units, { lambda: LAMBDA_CLOSEST }) } as Record<'A' | 'B' | 'C', Plan>;
+  }, [plan, brief, units]);
 
   if (!plan) {
     return (
@@ -30,7 +39,9 @@ export default function ReviewPage() {
   const site = siteById(brief.siteId);
   const company = companyById(brief.companyId);
   const end = stayEnd(brief.start, brief.months);
-  const chosen = new Map(plan.assignments.map((a) => [a.unitId, brief.employees.find((e) => e.id === a.employeeId)?.name ?? '']));
+  const shown = options![preview];
+  const chosen = new Map(shown.assignments.map((a) => [a.unitId, brief.employees.find((e) => e.id === a.employeeId)?.name ?? '']));
+  const priceOf = (p: Plan) => Math.round(companyInvoice(p.metrics.monthlyRent, p.metrics.apartments, flex).total / p.metrics.apartments);
   const planUnits = plan.assignments.map((a) => units.find((u) => u.id === a.unitId)!);
   const leasesOk = plan.assignments.every((a) => checkLease(draftForAssignment(brief, a)).canSign);
   const checks = [
@@ -53,8 +64,42 @@ export default function ReviewPage() {
       <div>
         <p className="text-sm font-semibold tracking-widest text-brand-700 uppercase">Step 2 · Plan — Ops review</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">Our team checks every plan before the client sees it</h1>
-        <p className="mt-3 max-w-2xl text-lg text-stone-600">The AI did the matching in {plan.computedMs} ms. A person reviews the checks below and releases the plan.</p>
+        <p className="mt-3 max-w-2xl text-lg text-stone-600">The AI compared three ways to house the team in {plan.computedMs} ms. A person reviews the recommended one and releases it.</p>
       </div>
+
+      <div className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Options" data-testid="plan-options">
+        {(['A', 'B', 'C'] as const).map((k) => {
+          const o = FACTS.options[k];
+          const p = options![k];
+          return (
+            <button
+              key={k}
+              type="button"
+              role="radio"
+              aria-checked={preview === k}
+              onClick={() => setPreview(k)}
+              data-testid={`option-${k}`}
+              className={cx('rounded-2xl border bg-white p-5 text-left transition-colors', preview === k ? 'border-ink ring-2 ring-ink' : 'border-stone-200 hover:border-stone-400')}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-stone-500">
+                  {k} · {o.label}
+                </span>
+                {k === 'B' ? <Badge tone="accent">Recommended</Badge> : null}
+              </div>
+              <div className="num mt-2 text-2xl font-semibold text-ink">
+                {eur(priceOf(p))}
+                <span className="text-base font-normal text-stone-500"> / apartment / month</span>
+              </div>
+              <div className="num text-stone-600">{Math.round(p.metrics.avgCommuteMin)} min average commute</div>
+            </button>
+          );
+        })}
+      </div>
+      <p className="flex flex-wrap items-center gap-2 text-sm text-stone-600">
+        <AiBadge /> Options built by the engine (all-in price: rent + markup{flex ? ' + Flex' : ''}). A person reviews before the client sees anything.
+        <Explain label="How are the options built?">Same team, same rules, three priorities: A ignores commute and minimises cost, C minimises commute, B balances both (€{DEFAULT_LAMBDA} of value per commute minute).</Explain>
+      </p>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <section className="rounded-2xl border border-stone-200 bg-white p-6" data-testid="review-queue">
@@ -104,7 +149,7 @@ export default function ReviewPage() {
             className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-brand-700 px-6 py-3.5 text-base font-semibold text-white hover:bg-brand-800 disabled:bg-stone-300"
             data-testid="release-plan"
           >
-            {reviewedAt ? 'Open the plan the client sees →' : 'Release plan to the client →'}
+            {reviewedAt ? 'Open the plan the client sees →' : 'Release option B to the client →'}
           </button>
         </section>
 

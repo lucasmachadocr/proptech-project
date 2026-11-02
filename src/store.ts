@@ -4,6 +4,7 @@ import { allocate, reallocate } from './ai/allocate';
 import type { Triage } from './ai/triage';
 import { DEMO_BRIEF, EXTRA_ENGINEERS } from './data/brief';
 import { UNITS } from './data/units';
+import { addMonths } from './lib/dates';
 import type { Brief, Plan, Reallocation, Unit, VerificationStatus } from './types';
 
 export interface Incident {
@@ -25,6 +26,7 @@ export interface ChangeRequest {
   label: string;
   extendMonths: number;
   addEngineers: number;
+  fromMonth: number; // new people join at the start of this mission month (1 = from the start)
   brief: Brief;
   result: Reallocation;
 }
@@ -46,7 +48,7 @@ interface State {
   approvePlan: () => void;
   releasePlan: () => void;
   setFlex: (on: boolean) => void;
-  proposeChange: (extendMonths: number, addEngineers: number) => ChangeRequest;
+  proposeChange: (addEngineers: number, fromMonth?: number, extendMonths?: number) => ChangeRequest;
   applyChange: () => void;
   setUnitStatus: (unitId: string, status: VerificationStatus) => void;
   signLease: (l: SignedLease) => void;
@@ -80,15 +82,21 @@ export const useStore = create<State>()(
       approvePlan: () => set({ approvedAt: new Date().toISOString(), reviewedAt: get().reviewedAt ?? new Date().toISOString() }),
       releasePlan: () => set({ reviewedAt: new Date().toISOString() }),
       setFlex: (flex) => set({ flex }),
-      proposeChange: (extendMonths, addEngineers) => {
+      proposeChange: (addEngineers, fromMonth = 1, extendMonths = 0) => {
         const { brief, plan, units } = get();
         const base = plan ?? get().runAllocation();
         const existing = new Set(brief.employees.map((e) => e.id));
-        const extra = EXTRA_ENGINEERS.filter((e) => !existing.has(e.id)).slice(0, addEngineers);
+        const joinDate = addMonths(brief.start, fromMonth - 1);
+        const extra = EXTRA_ENGINEERS.filter((e) => !existing.has(e.id))
+          .slice(0, addEngineers)
+          .map((e) => (fromMonth > 1 ? { ...e, start: joinDate } : e));
         const next: Brief = { ...brief, months: brief.months + extendMonths, employees: [...brief.employees, ...extra] };
         const result = reallocate(base, brief, next, units);
-        const parts = [extendMonths ? `Extend ${extendMonths} month${extendMonths > 1 ? 's' : ''}` : '', extra.length ? `+${extra.length} engineer${extra.length > 1 ? 's' : ''}` : ''].filter(Boolean);
-        const change: ChangeRequest = { label: parts.join(' + ') || 'No change', extendMonths, addEngineers: extra.length, brief: next, result };
+        const parts = [
+          extra.length ? `+${extra.length} engineer${extra.length > 1 ? 's' : ''}${fromMonth > 1 ? ` from month ${fromMonth}` : ''}` : '',
+          extendMonths ? `extend ${extendMonths} month${extendMonths > 1 ? 's' : ''}` : '',
+        ].filter(Boolean);
+        const change: ChangeRequest = { label: parts.join(', ') || 'No change', extendMonths, addEngineers: extra.length, fromMonth, brief: next, result };
         set({ change });
         return change;
       },

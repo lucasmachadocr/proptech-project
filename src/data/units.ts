@@ -1,9 +1,11 @@
 import type { Unit, UnitType, VerificationStatus } from '../types';
 import { PROVIDERS } from './providers';
-import { ZONES } from './sites';
+import { MADRID_RINGS, ZONES, kmForMinutes, madridPoint } from './sites';
 
 // Fictional furnished apartments (bills, Wi-Fi and fortnightly cleaning included). Demo data.
-// ~20 per city near the project sites; Madrid carries the demo case (20 engineers).
+// ~20 per city near the project sites. Madrid carries the demo case (20 engineers) and is laid out
+// in three commute rings so the engine's options land on the business-plan numbers:
+//   near ≈ 12 min / €2,140, mid ≈ 22 min / €1,992, far ≈ 31 min / €1,935 (company price per apartment-month).
 
 type Spec = [UnitType, number, Partial<Unit>?]; // type, rent €/month, overrides
 interface ZoneBlock {
@@ -23,17 +25,6 @@ const PENDING: Partial<Unit> = { status: 'pending' };
 const SQM: Record<UnitType, number> = { studio: 32, '1bed': 48, '2bed': 70, '3bed': 92 };
 
 const BLOCKS: ZoneBlock[] = [
-  // ── Madrid ─────────────────────────────────────────────────────────────
-  { code: 'MAD', zone: 'Coslada', providerId: 'P01', streets: ['Avenida de la Constitución', 'Calle Doctor Fleming', 'Calle Honrubia', 'Avenida de Berlín', 'Calle Mar Egeo', 'Paseo de Gaspar Sanz'],
-    units: [['1bed', 1960], ['1bed', 2010, ENDS_MAY_2027], ['1bed', 1950], ['1bed', 1944], ['1bed', 1940], ['studio', 1650]] },
-  { code: 'MAD', zone: 'San Blas', providerId: 'P02', streets: ['Calle Alcalá', 'Calle Amposta', 'Avenida de Arcentales', 'Calle Arcos de Jalón', 'Calle Pobladura del Valle', 'Calle Suecia'],
-    units: [['1bed', 1890], ['1bed', 1920], ['1bed', 1880, ENDS_MAY_2027], ['1bed', 1910], ['1bed', 1930], ['2bed', 2350]] },
-  { code: 'MAD', zone: 'Barajas', providerId: 'P03', streets: ['Avenida de Logroño', 'Calle Bergantín', 'Calle General', 'Avenida de América', 'Calle Playa de Riazor', 'Calle Ayerbe'],
-    units: [['1bed', 1850], ['1bed', 1820], ['1bed', 1870], ['1bed', 1840], ['1bed', 1860], ['studio', 1560]] },
-  { code: 'MAD', zone: 'Torrejón de Ardoz', providerId: 'P01', streets: ['Calle Hospital', 'Avenida de la Constitución', 'Calle Silicio', 'Calle Cristo', 'Paseo de la Estación', 'Calle Londres'],
-    units: [['1bed', 1780], ['1bed', 1800], ['1bed', 1790], ['1bed', 1810], ['1bed', 1830], ['2bed', 2240]] },
-  { code: 'MAD', zone: 'Ciudad Lineal', providerId: 'P02', streets: ['Calle Arturo Soria', 'Calle Alcalá', 'Calle Hermanos García Noblejas', 'Calle Elfo', 'Calle José del Hierro', 'Calle Virgen del Sagrario'],
-    units: [['1bed', 1990], ['1bed', 2060], ['1bed', 2080], ['1bed', 2100], ['1bed', 2120], ['2bed', 2450]] },
   // ── Barcelona ──────────────────────────────────────────────────────────
   { code: 'BCN', zone: 'Sants', providerId: 'P04', streets: ['Carrer de Sants', 'Carrer de Galileu', 'Carrer de Numància', 'Carrer de Viriat', 'Carrer de Badal'],
     units: [['1bed', 1950], ['1bed', 2020], ['studio', 1620], ['2bed', 2480], ['1bed', 1980]] },
@@ -124,17 +115,81 @@ function buildAll(): Unit[] {
   return out;
 }
 
-const BASE = buildAll();
 
-// A deliberately fraudulent new listing in Madrid (operator in onboarding): photos copied from MAD03,
-// owner on the listing ≠ owner in Catastro, rent ≈ 40% below the zone median.
-const COPIED = BASE.find((u) => u.id === 'MAD03')!;
+// ── Madrid (generated in commute rings; [minutes, rent, rotation°]) ───────────
+type RingSpec = [number, number, number];
+const MAD_SPEC: Record<string, { providerId: string; streets: string[]; units: RingSpec[]; extra?: Partial<Unit> }> = {
+  'Torrejón de Ardoz': { providerId: 'P01', streets: ['Calle Hospital', 'Avenida de la Constitución', 'Calle Silicio', 'Calle Cristo', 'Calle Londres'], units: [[11.6, 2024, -6], [12.4, 2014, -3], [11.8, 2021, 0], [12.2, 2017, 3], [12.0, 2019, 6]] },
+  Barajas: { providerId: 'P03', streets: ['Avenida de Logroño', 'Calle Bergantín', 'Calle General', 'Calle Playa de Riazor', 'Calle Ayerbe'], units: [[11.6, 2024, -6], [12.4, 2014, -3], [11.8, 2021, 0], [12.2, 2017, 3], [12.0, 2019, 6]] },
+  'San Blas': { providerId: 'P02', streets: ['Calle Alcalá', 'Calle Amposta', 'Avenida de Arcentales', 'Calle Arcos de Jalón', 'Calle Suecia'], units: [[11.6, 2024, -6], [12.4, 2014, -3], [11.8, 2021, 0], [12.2, 2017, 3], [12.0, 2019, 6]] },
+  'Mejorada del Campo': { providerId: 'P01', streets: ['Calle Mayor', 'Avenida de la Constitución', 'Calle del Pilar', 'Calle Cervantes', 'Plaza de España'], units: [[11.6, 2024, -6], [12.4, 2014, -3], [11.8, 2021, 0], [12.2, 2017, 3], [12.0, 2019, 6]] },
+  'Alcalá de Henares': { providerId: 'P01', streets: ['Calle Mayor', 'Vía Complutense', 'Calle Libreros', 'Paseo de la Estación', 'Calle Santiago'], units: [[21.9, 1874, -5], [22.1, 1884, -2], [22.0, 1876, 0], [21.95, 1882, 2], [22.05, 1879, 5]] },
+  Chamartín: { providerId: 'P02', streets: ['Calle Príncipe de Vergara', 'Calle López de Hoyos', 'Paseo de la Castellana', 'Calle Alberto Alcocer', 'Calle Corazón de María'], units: [[21.9, 1878, -5], [22.1, 1880, -2], [22.0, 1877, 0], [21.95, 1881, 2], [22.05, 1880, 5]] },
+  Retiro: { providerId: 'P03', streets: ['Calle Ibiza', 'Calle Doctor Esquerdo', 'Avenida de Menéndez Pelayo', 'Calle Narváez', 'Calle O\'Donnell'], units: [[21.9, 1875, -5], [22.1, 1883, -2], [22.0, 1879, 0], [21.95, 1879, 2], [22.05, 1880, 5]] },
+  'Arganda del Rey': { providerId: 'P02', streets: ['Calle Real', 'Avenida del Ejército', 'Calle San Juan', 'Calle Juan de la Cierva', 'Plaza de la Constitución'], units: [[21.9, 1876, -5], [22.1, 1882, -2], [22.0, 1878, 0], [21.95, 1880, 2], [22.05, 1881, 5]] },
+  Getafe: { providerId: 'P03', streets: ['Calle Madrid', 'Avenida de España', 'Calle Toledo', 'Calle Leganés', 'Calle Ramón y Cajal'], units: [[30.7, 1815, -5], [31.3, 1835, -2], [30.9, 1820, 0], [31.1, 1830, 2], [31.0, 1826, 5]] },
+  Carabanchel: { providerId: 'P02', streets: ['Calle General Ricardos', 'Vía Carpetana', 'Calle Oca', 'Calle Eugenia de Montijo', 'Calle Antonio Leyva'], units: [[30.7, 1822, -5], [31.3, 1828, -2], [30.9, 1818, 0], [31.1, 1832, 2], [31.0, 1825, 5]] },
+  Alcobendas: { providerId: 'P01', streets: ['Calle Marquesa Viuda de Aldama', 'Avenida de España', 'Calle Constitución', 'Paseo de la Chopera', 'Calle Málaga'], units: [[30.7, 1824, -5], [31.3, 1827, -2], [30.9, 1819, 0], [31.1, 1831, 2], [31.0, 1826, 5]] },
+  Villaverde: { providerId: 'P03', streets: ['Avenida de Andalucía', 'Calle Alcocer', 'Calle Doctor Martín Arévalo', 'Calle Villalonso', 'Calle Unanimidad'], units: [[30.7, 1823, -5], [31.3, 1829, -2], [30.9, 1821, 0], [31.1, 1830, 2], [31.0, 1828, 5]] },
+};
+// Three more mid-ring apartments, free from month 3 — used when 3 engineers join mid-mission.
+const MAD_FROM_MONTH_3: [string, RingSpec][] = [
+  ['Chamartín', [22.0, 1879, 8]],
+  ['Retiro', [22.0, 1879, 8]],
+  ['Alcalá de Henares', [22.0, 1880, 8]],
+];
+export const MONTH_3 = '2027-02-01';
+
+function madridUnits(): Unit[] {
+  const out: Unit[] = [];
+  let n = 0;
+  const make = (zone: string, [min, rent, rot]: RingSpec, streetIdx: number, extra: Partial<Unit> = {}): Unit => {
+    n += 1;
+    const id = `MAD${String(n).padStart(2, '0')}`;
+    const spec = MAD_SPEC[zone];
+    const z = ZONES[zone];
+    const provider = PROVIDERS.find((p) => p.id === spec.providerId)!;
+    const pt = madridPoint(MADRID_RINGS[zone].toward, kmForMinutes(min), rot);
+    return {
+      id,
+      providerId: spec.providerId,
+      title: `1-bed apartment · ${zone}`,
+      type: '1bed',
+      sqm: 45 + (n % 7),
+      rent,
+      zone,
+      town: z.town,
+      city: 'Madrid',
+      address: `${spec.streets[streetIdx % spec.streets.length]} ${(n * 13) % 90 + 2}, ${(n % 4) + 1}º${'ABCD'[n % 4]}, ${z.town}`,
+      lat: +pt.lat.toFixed(5),
+      lng: +pt.lng.toFixed(5),
+      amenities: [...AMENITIES['1bed'], ...(n % 3 === 0 ? ['Parking'] : []), 'Cleaning fortnightly'],
+      availableFrom: DEFAULT_FROM,
+      availableTo: DEFAULT_TO,
+      photos: [`ph-${id}-a`, `ph-${id}-b`, `ph-${id}-c`],
+      ownerName: provider.legalName,
+      catastroOwner: provider.legalName,
+      listingCif: provider.cif,
+      status: 'verified',
+      ...extra,
+    };
+  };
+  for (const [zone, spec] of Object.entries(MAD_SPEC)) spec.units.forEach((u, i) => out.push(make(zone, u, i)));
+  for (const [zone, u] of MAD_FROM_MONTH_3) out.push(make(zone, u, 2, { availableFrom: MONTH_3 }));
+  return out;
+}
+
+const BASE = [...madridUnits(), ...buildAll()];
+
+// A deliberately fraudulent new listing in Madrid (operator in onboarding): photos copied from MAD27
+// (Chamartín), owner on the listing ≠ owner in Catastro, rent ≈ 40% below the zone median.
+const COPIED = BASE.find((u) => u.id === 'MAD27')!;
 const FRAUD: Unit = {
   ...COPIED,
   id: 'MAD99',
   providerId: 'P12',
-  title: 'Bright 1-bed near the airport — all bills included',
-  rent: 1170,
+  title: 'Bright 1-bed in Chamartín — all bills included',
+  rent: 1127,
   photos: [...COPIED.photos],
   ownerName: 'Javier Ortiz Lahoz',
   catastroOwner: COPIED.catastroOwner,

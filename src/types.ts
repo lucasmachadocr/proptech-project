@@ -71,6 +71,7 @@ export interface Employee {
   title: string;
   household: Household;
   nationality?: string;
+  start?: ISODate; // joins after the mission start (e.g. +3 engineers from month 3)
 }
 
 export interface Company {

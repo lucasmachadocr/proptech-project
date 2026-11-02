@@ -35,6 +35,12 @@ describe('SETTLE_IN_FACTS.md ↔ facts.ts', () => {
     for (const k of ['people', 'months', 'apartmentMonths', 'rentPerApartmentMonth', 'rentTotal', 'markupRate', 'companyPays', 'revenue', 'flexPool', 'directCostPerApartmentMonth', 'directCost'] as const) {
       expect(num(`demo.${k}`), k).toBe(FACTS.demo[k]);
     }
+    for (const k of ['A', 'B', 'C'] as const) {
+      expect(rows[`options.${k}`], k).toBe(`${FACTS.options[k].pricePerApartmentMonth} / ${FACTS.options[k].avgCommuteMin}`);
+    }
+    for (const k of ['people', 'fromMonth', 'months', 'pricePerApartmentMonth', 'delta', 'apartmentsAfter', 'moved'] as const) {
+      expect(num(`replan.${k}`), k).toBe(FACTS.replan[k]);
+    }
     expect(num('kpi.briefToPlanHours')).toBe(FACTS.kpi.briefToPlanHours);
     expect(num('kpi.opsHoursPerMission')).toBe(FACTS.kpi.opsHoursPerMission);
     expect(num('kpi.opsHoursManual')).toBe(FACTS.kpi.opsHoursManual);

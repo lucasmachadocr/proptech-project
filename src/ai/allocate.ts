@@ -14,7 +14,9 @@ import type {
 } from '../types';
 import { commuteMin } from './geo';
 
-export const DEFAULT_LAMBDA = 15; // € per one-way commute minute per month
+export const DEFAULT_LAMBDA = 12; // € per one-way commute minute per month (balanced option)
+export const LAMBDA_LOWEST_COST = 0;
+export const LAMBDA_CLOSEST = 200;
 export const DEFAULT_MOVE_PENALTY = 400; // € equivalent per person moved
 
 export interface AllocateOptions {
@@ -58,10 +60,11 @@ export function checkUnit(emp: Employee, unit: Unit, brief: Brief): Feasibility 
   const site = siteById(brief.siteId);
   const commute = commuteMin(site, unit);
   const end = stayEnd(brief.start, brief.months);
+  const start = emp.start ?? brief.start;
   if (unit.status !== 'verified') return { ok: false, fail: 'unverified', commute };
   if (!allowedTypes(emp, brief).includes(unit.type)) return { ok: false, fail: 'type', commute };
   if (unit.rent > brief.budgetCaps[emp.role]) return { ok: false, fail: 'budget', commute };
-  if (unit.availableFrom > brief.start || unit.availableTo < end) return { ok: false, fail: 'availability', commute };
+  if (unit.availableFrom > start || unit.availableTo < end) return { ok: false, fail: 'availability', commute };
   if (commute > brief.maxCommuteMin) return { ok: false, fail: 'commute', commute };
   return { ok: true, commute };
 }
@@ -230,8 +233,17 @@ function unassignedReason(ctx: Ctx, emp: Employee): string {
   return `No feasible unit: most candidates are ${top ? FAIL_TEXT[top[0]] : 'unavailable'}.`;
 }
 
+/** Months an employee is housed in the mission (joins on `emp.start`, leaves at the mission end). */
+export function planMonths(emp: Employee | undefined, brief: Brief): number {
+  if (!emp?.start || emp.start <= brief.start) return brief.months;
+  const [y0, m0] = brief.start.split('-').map(Number);
+  const [y1, m1] = emp.start.split('-').map(Number);
+  return brief.months - ((y1 - y0) * 12 + (m1 - m0));
+}
+
 export function planMetrics(brief: Brief, assignments: Assignment[], objective: number): PlanMetrics {
   const monthlyRent = assignments.reduce((s, a) => s + a.rent, 0);
+  const monthsOf = (a: Assignment) => planMonths(brief.employees.find((e) => e.id === a.employeeId), brief);
   const commutes = assignments.map((a) => a.commuteMin);
   const roles: Role[] = ['engineer', 'technician', 'manager', 'expat'];
   const budgetUse = Object.fromEntries(
@@ -242,11 +254,11 @@ export function planMetrics(brief: Brief, assignments: Assignment[], objective: 
   ) as PlanMetrics['budgetUse'];
   return {
     monthlyRent,
-    totalRent: monthlyRent * brief.months,
+    totalRent: assignments.reduce((s, a) => s + a.rent * monthsOf(a), 0),
     avgCommuteMin: commutes.length ? r1(commutes.reduce((s, c) => s + c, 0) / commutes.length) : 0,
     maxCommuteMin: commutes.length ? r1(Math.max(...commutes)) : 0,
     apartments: assignments.length,
-    apartmentMonths: assignments.length * brief.months,
+    apartmentMonths: assignments.reduce((s, a) => s + monthsOf(a), 0),
     objective: Math.round(objective),
     budgetUse,
   };

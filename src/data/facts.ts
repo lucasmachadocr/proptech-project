@@ -37,6 +37,12 @@ export const FACTS = {
     directCostPerApartmentMonth: 36,
     directCost: 4320,
   },
+  options: {
+    A: { label: 'Lowest cost', pricePerApartmentMonth: 1935, avgCommuteMin: 31 },
+    B: { label: 'Balanced', pricePerApartmentMonth: 1992, avgCommuteMin: 22 },
+    C: { label: 'Closest', pricePerApartmentMonth: 2140, avgCommuteMin: 12 },
+  },
+  replan: { people: 3, fromMonth: 3, months: 4, pricePerApartmentMonth: 1992, delta: 23904, apartmentsAfter: 23, moved: 0 },
   kpi: {
     briefToPlanHours: 48,
     opsHoursPerMission: 38.5,

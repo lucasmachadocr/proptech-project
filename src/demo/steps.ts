@@ -57,12 +57,12 @@ export const DEMO_STEPS: DemoStep[] = [
     n: 4,
     key: 'replan',
     title: 'Re-plan',
-    say: 'Projects change. The mission is extended 2 months and 3 engineers join. Only the people whose apartment is not free for the new dates move; the client sees the cost change before approving.',
+    say: 'Projects change: 3 more engineers join from month 3. Nobody already housed moves; the engine finds 3 more apartments nearby and the client sees the cost before approving: 3 × €1,992 × 4 months = +€23,904, still in the 4% tier.',
     run: () => {
       ensureReleased();
       const s = useStore.getState();
       if (!s.approvedAt) s.approvePlan();
-      s.proposeChange(2, 3);
+      s.proposeChange(3, 3);
       return '/client/change';
     },
   },

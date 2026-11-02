@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { allocate } from '../ai/allocate';
+import { LAMBDA_CLOSEST, LAMBDA_LOWEST_COST, allocate, reallocate } from '../ai/allocate';
+import { companyInvoice, missionPricePerApartmentMonth, replanCost } from '../lib/money';
+import { EXTRA_ENGINEERS } from './brief';
+import { MONTH_3 } from './units';
 import { DEMO_BRIEF } from './brief';
 import { FACTS } from './facts';
 import { PROVIDERS } from './providers';
@@ -39,5 +42,25 @@ describe('seed data', () => {
     expect(plan.metrics.monthlyRent).toBe(37_584);
     expect(plan.metrics.totalRent).toBe(FACTS.demo.rentTotal);
     expect(plan.metrics.monthlyRent / 20).toBeCloseTo(FACTS.demo.rentPerApartmentMonth, 2);
+  });
+
+  it('the engine produces the three business-plan options A / B / C', () => {
+    const run = (lambda?: number) => allocate(DEMO_BRIEF, UNITS, lambda === undefined ? {} : { lambda });
+    for (const [k, p] of [['A', run(LAMBDA_LOWEST_COST)], ['B', run()], ['C', run(LAMBDA_CLOSEST)]] as const) {
+      const price = Math.round(companyInvoice(p.metrics.monthlyRent, p.metrics.apartments, true).total / p.metrics.apartments);
+      expect(price, k).toBe(FACTS.options[k].pricePerApartmentMonth);
+      expect(Math.round(p.metrics.avgCommuteMin), k).toBe(FACTS.options[k].avgCommuteMin);
+    }
+  });
+
+  it('re-plan: +3 engineers from month 3 cost 3 × €1,992 × 4 = €23,904 and stay in the 4% tier', () => {
+    const plan = allocate(DEMO_BRIEF, UNITS);
+    const price = missionPricePerApartmentMonth(plan.metrics.totalRent, plan.metrics.apartments, plan.metrics.apartmentMonths, true);
+    expect(price).toBe(FACTS.replan.pricePerApartmentMonth);
+    expect(replanCost(price, FACTS.replan.people, FACTS.replan.months)).toBe(FACTS.replan.delta);
+    const r = reallocate(plan, DEMO_BRIEF, { ...DEMO_BRIEF, employees: [...DEMO_BRIEF.employees, ...EXTRA_ENGINEERS.map((e) => ({ ...e, start: MONTH_3 }))] }, UNITS);
+    expect(r.plan.metrics.apartments).toBe(FACTS.replan.apartmentsAfter);
+    expect(r.moved).toBe(0);
+    expect(companyInvoice(1, r.plan.metrics.apartments).markupRate).toBe(0.04);
   });
 });

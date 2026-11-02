@@ -40,13 +40,13 @@ export const DEMO_BRIEF: Brief = {
   siteId: 'S-MAD',
   start: '2026-12-01',
   months: 6,
-  maxCommuteMin: 30,
+  maxCommuteMin: 35,
   budgetCaps: { technician: 2200, engineer: 2200, manager: 2400, expat: 2600 },
   minUnitType: { technician: '1bed', engineer: '1bed', manager: '1bed', expat: '2bed' },
   employees: DEMO_EMPLOYEES,
 };
 
-// Re-plan used in the demo: +2 months and +3 engineers.
+// Re-plan used in the demo: +3 engineers from month 3 (no extension).
 export const EXTRA_ENGINEERS: Employee[] = [
   { id: 'E21', name: 'Nadia Haddad', role: 'engineer', title: 'Fire-safety engineer', household: { adults: 1, children: 0 }, nationality: 'FR' },
   { id: 'E22', name: 'Tomás Gil', role: 'engineer', title: 'Electrical engineer', household: { adults: 1, children: 0 }, nationality: 'ES' },
