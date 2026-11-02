@@ -1,24 +1,26 @@
-# Settle In – PropTech MVP (investor demo 13 Nov 2026)
+# Settle In – AI MVP (investor pitch 13 Nov 2026)
 
-Clickable, 100% static MVP of a B2B managed marketplace that houses relocated project teams
-(engineers, technicians, managers, expat families; 1–12 months) near the Zaragoza data-centre and
-gigafactory sites. Business model: 18% take rate = 10% landlord commission + 8% company fee.
-Source of truth for operations content: ESCP Deliverable 1, Section 5 (Operations) – see PLAN.md.
+Clickable, 100% static MVP of a B2B managed marketplace that houses project teams (engineers, 1–12
+months) in verified furnished apartments in Madrid, Barcelona, Valencia, Málaga and Zaragoza.
+Source of truth: business plan v11 (investor version) → **SETTLE_IN_FACTS.md**.
+The same rules apply to every AI assistant: see AGENTS.md (identical content for GPT/Codex/others).
 
 ## Rules
-- Static only: no backend, no API keys or secrets in the front-end. Phase-2 LLM goes through a
-  serverless function behind `src/ai/llm.ts` (`LlmClient` interface; `MockLlmClient` today).
-- "AI" in phase 1 = local deterministic engines in `src/ai/` (allocation, verification, compliance,
-  triage). Every AI-produced output in the UI carries `<AiBadge />`.
-- All seed data is fictional and labelled "Demo data". Keep the calibration locked by tests:
-  demo plan = €27,000/month → 6 months = €162,000 rent → €174,960 invoiced → €29,160 revenue.
-- App name lives only in `src/config.ts` (`APP_NAME`). Rename there.
-- HashRouter (GitHub Pages). Vite `base` comes from `BASE_PATH` (set in CI).
-- Design: "settle in" logo (terracotta arch, `src/components/Logo.tsx`); cream background + stone neutrals + one accent `brand-*` (terracotta, defined in `src/index.css`); tabular numbers; visible focus rings; responsive; iPhone home-screen icons in `public/`.
-- Before every commit: `npm test` and `npm run build` must pass. Conventional commits.
-- E2E: `npm run e2e` (local preview) or `BASE_URL=<live url> npm run e2e`.
+- **Numbers live only in `SETTLE_IN_FACTS.md` + `src/data/facts.ts`.** Never hard-code a business
+  number in a page; import it from `FACTS`. `src/data/facts.test.ts` fails if the two drift.
+- Demo case locked by tests: 20 engineers · Madrid · 6 months · rent €225,504 → company pays
+  €239,034 (rent + 4% markup + 2% Flex) → Settle In revenue €24,805; Flex pool €2,255 is NOT revenue.
+  Options A/B/C = €1,935/31 min · €1,992/22 min · €2,140/12 min. Re-plan = +3 engineers from month 3 =
+  +€23,904, nobody moves, 23 apartments (4% tier).
+- Static only: no backend, no API keys. Phase-2 LLM goes behind `src/ai/llm.ts` (`LlmClient`).
+- "AI" = local deterministic engines in `src/ai/`. Every AI output in the UI carries `<AiBadge />`.
+- Minimal UX: one idea and one primary button per screen; numbers get an `<Explain>` tooltip.
+- Brand: terracotta #C4573D · cream #F7EEE7 · ink #2A2320 (`src/index.css`, `brand-*` / `cream` / `ink`).
+- All seed data is fictional ("Demo data"). App name only in `src/config.ts`.
+- Before every commit: `npm test` and `npm run build`. Conventional commits.
+- E2E: `npm run e2e` (local) or `BASE_URL=<live url> npm run e2e`. Deck screenshots: `npm run shots`.
 
 ## Layout
-- `src/data/` seed (sites, providers, units, companies, demo brief, risks)
-- `src/ai/` engines + tests · `src/lib/` money, dates, format · `src/store.ts` Zustand (persisted)
-- `src/pages/{demo,client,provider,employee,ops,about}` · `src/components/` shared UI
+- `src/data/` seed + facts · `src/ai/` engines + tests · `src/lib/` money, dates, format
+- `src/store.ts` Zustand state · `src/demo/steps.ts` the 5-step guided demo
+- `src/pages/{demo,client,provider,employee,ops,about}` · `src/components/` shared UI (CityMap, DemoBar, ui)
