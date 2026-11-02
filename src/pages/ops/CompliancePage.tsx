@@ -98,6 +98,10 @@ export default function CompliancePage() {
               <input type="checkbox" className="h-4 w-4 accent-brand-700" checked={draft.assignmentLetter} onChange={(e) => set('assignmentLetter', e.target.checked)} />
               Employer assignment letter attached
             </label>
+            <label className="flex items-center gap-2 text-sm text-stone-700 sm:col-span-2">
+              <input type="checkbox" className="h-4 w-4 accent-brand-700" checked={draft.earlyExitClause} onChange={(e) => set('earlyExitClause', e.target.checked)} />
+              Early-exit clause: tenant may leave after 1 month with 10 days' notice
+            </label>
             <label className={labelCls}>
               Additional guarantee (months)
               <input type="number" min={0} max={6} className={inputCls} value={draft.guaranteeMonths} onChange={(e) => set('guaranteeMonths', Number(e.target.value))} />

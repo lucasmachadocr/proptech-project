@@ -15,7 +15,7 @@ export interface LeaseDraft {
   assignmentLetter: boolean; // employer assignment letter attached
   guaranteeMonths: number; // additional guarantee on top of the legal deposit
   priorConsecutiveLeases: number; // earlier back-to-back leases, same parties, same unit
-  month6Exit: boolean; // month-6 exit right noted in the lease (business plan v11)
+  earlyExitClause: boolean; // tenant may leave after 1 month with 10 days' notice (RDL 29/2026, LAU art. 11.2)
 }
 
 export interface RuleResult {
@@ -90,9 +90,9 @@ export function checkLease(d: LeaseDraft): ComplianceResult {
   );
 
   rules.push(
-    d.month6Exit
-      ? { id: 'exit', label: 'Month-6 exit right noted', light: 'green', detail: 'The company can end the lease at month 6 with notice' }
-      : { id: 'exit', label: 'Month-6 exit right noted', light: 'amber', detail: 'Add the month-6 exit clause before signing' },
+    d.earlyExitClause
+      ? { id: 'exit', label: "Tenant may leave after 1 month (10 days' notice)", light: 'green', detail: "Clause included: after the first month the tenant may end the lease with 10 days' notice (RDL 29/2026, LAU art. 11.2)" }
+      : { id: 'exit', label: "Tenant may leave after 1 month (10 days' notice)", light: 'amber', detail: "Add the early-exit clause required by RDL 29/2026 (LAU art. 11.2): leave after 1 month with 10 days' notice" },
   );
 
   const overall: Light = rules.some((r) => r.light === 'red') ? 'red' : rules.some((r) => r.light === 'amber') ? 'amber' : 'green';

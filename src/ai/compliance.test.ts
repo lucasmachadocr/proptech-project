@@ -11,7 +11,7 @@ const ok: LeaseDraft = {
   assignmentLetter: true,
   guaranteeMonths: 1,
   priorConsecutiveLeases: 0,
-  month6Exit: true,
+  earlyExitClause: true,
 };
 const rule = (d: LeaseDraft, id: string) => checkLease(d).rules.find((r) => r.id === id)!.light;
 
@@ -45,9 +45,10 @@ describe('compliance (RDL 29/2026)', () => {
     expect(rule({ ...ok, guaranteeMonths: 2 }, 'guarantee')).toBe('red');
   });
 
-  it('missing month-6 exit clause is flagged amber', () => {
-    expect(rule({ ...ok, month6Exit: false }, 'exit')).toBe('amber');
-    expect(checkLease({ ...ok, month6Exit: false }).canSign).toBe(true);
+  it("missing early-exit clause (1 month, 10 days' notice) is flagged amber", () => {
+    expect(rule({ ...ok, earlyExitClause: false }, 'exit')).toBe('amber');
+    expect(checkLease({ ...ok, earlyExitClause: false }).canSign).toBe(true);
+    expect(rule(ok, 'exit')).toBe('green');
   });
 
   it('any red blocks signing', () => {

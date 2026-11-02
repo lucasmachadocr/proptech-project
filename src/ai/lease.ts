@@ -22,6 +22,7 @@ export function generateLease(d: LeaseDraft, unit: Unit, company: Company, provi
       { heading: '3. Term', body: `From ${formatDate(d.start)} to ${formatDate(d.end)}. Seasonal lease under art. 3 LAU as amended by Royal Decree-Law 29/2026. No tacit renewal.` },
       { heading: '4. Cause of temporary stay', body: d.cause || '[missing]' },
       { heading: '5. Rent and payment', body: `€${unit.rent.toLocaleString('en-GB')} per month, payable monthly through the platform's consolidated project invoice. Rent is held by the licensed payment provider and paid out to the Landlord net of the platform commission.` },
+      { heading: '5b. Early exit', body: d.earlyExitClause ? "After the first month, the Tenant may end this lease at any time with 10 days' written notice (RDL 29/2026, LAU art. 11.2)." : '[missing early-exit clause]' },
       { heading: '6. Deposit and guarantee', body: `Legal deposit as required by law. Additional guarantee: ${d.guaranteeMonths} month(s) of rent.` },
       { heading: '7. Signatures', body: 'Signed electronically by both parties (qualified e-signature provider).' },
     ],

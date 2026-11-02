@@ -20,7 +20,7 @@ export function draftForAssignment(brief: Brief, a: Assignment): LeaseDraft {
     assignmentLetter: true,
     guaranteeMonths: 1,
     priorConsecutiveLeases: 0,
-    month6Exit: true,
+    earlyExitClause: true,
   };
 }
 
@@ -34,6 +34,6 @@ export function nonCompliantDraft(brief: Brief, a: Assignment): LeaseDraft {
     assignmentLetter: false,
     guaranteeMonths: 2,
     priorConsecutiveLeases: 2,
-    month6Exit: false,
+    earlyExitClause: false,
   };
 }
