@@ -27,8 +27,12 @@ export default function EmployeePage() {
   const [text, setText] = useState('');
   const [photos, setPhotos] = useState(0);
   const endRef = useRef<HTMLDivElement>(null);
-  useEffect(() => endRef.current?.scrollIntoView({ block: 'end' }), [extra]);
-  useEffect(() => setExtra([]), [employeeId]);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: 'end' });
+  }, [extra]);
+  useEffect(() => {
+    setExtra([]);
+  }, [employeeId]);
 
   if (!plan) {
     return (

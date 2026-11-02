@@ -55,7 +55,9 @@ export default function CityMap({ city, chosen, height = 420, showZones = true }
   const units = useStore((s) => s.units);
   const site = siteForCity(city);
   const [selected, setSelected] = useState<Unit | null>(null);
-  useEffect(() => setSelected(null), [city]);
+  useEffect(() => {
+    setSelected(null);
+  }, [city]);
 
   const cityUnits = useMemo(() => units.filter((u) => u.city === city && u.status === 'verified'), [units, city]);
   const hasPlan = !!chosen && chosen.size > 0;
