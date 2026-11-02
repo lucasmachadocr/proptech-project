@@ -4,20 +4,20 @@ import type { Company } from '../types';
 export const COMPANIES: Company[] = [
   {
     id: 'C01',
-    name: 'Cierzo Data Centres',
-    legalName: 'Cierzo Data Centres Iberia S.L.',
+    name: 'Iberia Grid Engineering',
+    legalName: 'Iberia Grid Engineering S.L.',
     cif: 'B88123456',
-    kind: 'Data-centre owner',
-    siteIds: ['S-MSFT', 'S-AWS'],
+    kind: 'Engineering contractor',
+    siteIds: ['S-MAD', 'S-ZAZ'],
     contact: 'Marta Lafuente · Head of Mobility',
   },
   {
     id: 'C02',
-    name: 'Ebro Cell Manufacturing JV',
-    legalName: 'Ebro Cell Manufacturing JV S.L.',
+    name: 'Levante Battery Systems',
+    legalName: 'Levante Battery Systems S.L.',
     cif: 'B99654321',
-    kind: 'Gigafactory joint venture',
-    siteIds: ['S-GIGA'],
+    kind: 'Industrial manufacturer',
+    siteIds: ['S-VLC', 'S-BCN', 'S-AGP'],
     contact: 'Thomas Weber · HR Projects',
   },
 ];

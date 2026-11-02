@@ -6,6 +6,7 @@ export type VerificationStatus = 'verified' | 'pending' | 'rejected';
 
 export interface Site {
   id: string;
+  city: string;
   name: string;
   operator: string;
   town: string;
@@ -23,10 +24,11 @@ export interface Provider {
   city: string;
   status: VerificationStatus;
   joined: ISODate;
+  kycVerified: boolean; // identity + company KYC at the payment provider
 }
 
 export interface VerificationCheck {
-  id: 'documents' | 'photos' | 'price' | 'address';
+  id: 'kyc' | 'catastro' | 'photos' | 'price' | 'registration';
   label: string;
   pass: boolean;
   detail: string;
@@ -42,6 +44,7 @@ export interface Unit {
   rent: number; // € / month, furnished, bills included
   zone: string; // neighbourhood or town
   town: string;
+  city: string; // demo city (one of FACTS.cities)
   address: string;
   lat: number;
   lng: number;
@@ -49,8 +52,10 @@ export interface Unit {
   availableFrom: ISODate;
   availableTo: ISODate;
   photos: string[]; // perceptual-hash ids of listing photos
-  ownerName: string; // name declared on the listing / title deed
+  ownerName: string; // owner declared on the listing
+  catastroOwner: string; // owner per the Catastro / land registry check
   listingCif: string; // CIF declared on the listing
+  registrationNo?: string; // regional rental registration, where the region requires it
   status: VerificationStatus;
 }
 
@@ -108,9 +113,8 @@ export interface PlanMetrics {
   totalRent: number;
   avgCommuteMin: number;
   maxCommuteMin: number;
-  hotelMonthly: number;
-  savingVsHotelMonthly: number;
-  savingVsHotelPct: number;
+  apartments: number;
+  apartmentMonths: number;
   objective: number;
   budgetUse: Record<Role, { used: number; cap: number; count: number }>;
 }
