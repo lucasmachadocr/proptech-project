@@ -27,8 +27,7 @@ export class MockLlmClient implements LlmClient {
   async explainPlan(plan: Plan, brief: Brief): Promise<string> {
     const m = plan.metrics;
     return `All ${plan.assignments.length} of ${brief.employees.length} people are housed within ${brief.maxCommuteMin} minutes of the site ` +
-      `(average ${m.avgCommuteMin} min) for €${m.monthlyRent.toLocaleString('en-GB')} a month. ` +
-      `That is ${Math.round(m.savingVsHotelPct * 100)}% cheaper than hotel nights at €74, including our fee.`;
+      `(average ${m.avgCommuteMin} min), in ${m.apartments} apartments at €${m.monthlyRent.toLocaleString('en-GB')} of rent a month.`;
   }
 
   async triageIssue(text: string): Promise<Triage> {

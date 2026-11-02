@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEMO_BRIEF, EXTRA_ENGINEERS } from '../data/brief';
-import { UNITS } from '../data/units';
+import { FRAUD_UNIT_ID, UNITS } from '../data/units';
+import { FACTS } from '../data/facts';
 import { stayEnd } from '../lib/dates';
 import type { Brief, Employee, Plan, Role, Unit, UnitType } from '../types';
 import { allocate, allowedTypes, checkUnit, reallocate } from './allocate';
@@ -24,7 +25,7 @@ function assertHardRules(plan: Plan, brief: Brief, units: Unit[]) {
 describe('allowedTypes', () => {
   it('maps household + role policy to unit types', () => {
     const mk = (role: Role, adults: number, children: number): Employee => ({ id: 'x', name: 'X', role, title: '', household: { adults, children } });
-    expect(allowedTypes(mk('technician', 1, 0), DEMO_BRIEF)).toEqual(['studio', '1bed']);
+    expect(allowedTypes(mk('technician', 1, 0), DEMO_BRIEF)).toEqual(['1bed']);
     expect(allowedTypes(mk('engineer', 1, 0), DEMO_BRIEF)).toEqual(['1bed']);
     expect(allowedTypes(mk('manager', 2, 0), DEMO_BRIEF)).toEqual(['1bed', '2bed']);
     expect(allowedTypes(mk('expat', 2, 1), DEMO_BRIEF)).toEqual(['2bed', '3bed']);
@@ -36,7 +37,7 @@ describe('allocate (demo brief)', () => {
   const plan = allocate(DEMO_BRIEF, UNITS);
 
   it('assigns all 15 people and respects every hard rule', () => {
-    expect(plan.assignments).toHaveLength(15);
+    expect(plan.assignments).toHaveLength(20);
     expect(plan.unassigned).toHaveLength(0);
     assertHardRules(plan, DEMO_BRIEF, UNITS);
   });
@@ -59,8 +60,7 @@ describe('allocate (demo brief)', () => {
   it('returns human-readable trade-offs and KPIs', () => {
     expect(plan.tradeoffs.length).toBeGreaterThanOrEqual(3);
     expect(plan.tradeoffs.some((t) => t.kind === 'excluded')).toBe(true);
-    expect(plan.metrics.hotelMonthly).toBeCloseTo(15 * 74 * 30.4, 2);
-    expect(plan.metrics.savingVsHotelMonthly).toBeGreaterThan(0);
+    expect(plan.metrics.apartments).toBe(20);
     expect(plan.metrics.avgCommuteMin).toBeGreaterThan(0);
   });
 
@@ -73,8 +73,8 @@ describe('allocate (demo brief)', () => {
 
   it('checkUnit flags the reason a unit is rejected', () => {
     const e = DEMO_BRIEF.employees[0];
-    expect(checkUnit(e, UNITS.find((u) => u.id === 'U60')!, DEMO_BRIEF).fail).toBe('unverified');
-    expect(checkUnit(e, UNITS.find((u) => u.zone === 'Fuentes de Ebro' && u.type === '1bed')!, DEMO_BRIEF).fail).toBe('commute');
+    expect(checkUnit(e, UNITS.find((u) => u.id === FRAUD_UNIT_ID)!, DEMO_BRIEF).fail).toBe('unverified');
+    expect(checkUnit(e, UNITS.find((u) => u.city === 'Zaragoza' && u.type === '1bed')!, DEMO_BRIEF).fail).toBe('commute');
   });
 });
 
@@ -84,7 +84,7 @@ describe('reallocate (extend 2 months + 3 engineers)', () => {
   const r = reallocate(plan, DEMO_BRIEF, next, UNITS);
 
   it('adds exactly 3 assignments and keeps all rules', () => {
-    expect(r.plan.assignments).toHaveLength(18);
+    expect(r.plan.assignments).toHaveLength(23);
     expect(r.diff.filter((d) => d.kind === 'new')).toHaveLength(3);
     assertHardRules(r.plan, next, UNITS);
   });
@@ -100,7 +100,7 @@ describe('reallocate (extend 2 months + 3 engineers)', () => {
 
   it('reports the cost delta', () => {
     expect(r.monthlyDelta).toBe(r.plan.metrics.monthlyRent - plan.metrics.monthlyRent);
-    expect(r.totalDelta).toBe(r.plan.metrics.totalRent - 162_000);
+    expect(r.totalDelta).toBe(r.plan.metrics.totalRent - FACTS.demo.rentTotal);
     expect(r.monthlyDelta).toBeGreaterThan(0);
   });
 
@@ -135,7 +135,7 @@ describe('performance', () => {
       const role = roles[i % 4];
       return { id: `P${i}`, name: `Person ${i}`, role, title: '', household: role === 'expat' ? { adults: 2, children: 1 + (i % 2) } : { adults: 1, children: 0 } };
     });
-    const brief: Brief = { ...DEMO_BRIEF, employees, budgetCaps: { engineer: 2200, technician: 2200, manager: 2200, expat: 2200 } };
+    const brief: Brief = { ...DEMO_BRIEF, siteId: 'S-ZAZ', employees, budgetCaps: { engineer: 2200, technician: 2200, manager: 2200, expat: 2200 } };
     const t0 = performance.now();
     const plan = allocate(brief, units);
     const ms = performance.now() - t0;

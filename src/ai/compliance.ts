@@ -15,10 +15,11 @@ export interface LeaseDraft {
   assignmentLetter: boolean; // employer assignment letter attached
   guaranteeMonths: number; // additional guarantee on top of the legal deposit
   priorConsecutiveLeases: number; // earlier back-to-back leases, same parties, same unit
+  month6Exit: boolean; // month-6 exit right noted in the lease (business plan v11)
 }
 
 export interface RuleResult {
-  id: 'duration' | 'cause' | 'letter' | 'consecutive' | 'guarantee' | 'occupants';
+  id: 'duration' | 'cause' | 'letter' | 'consecutive' | 'guarantee' | 'occupants' | 'exit';
   label: string;
   light: Light;
   detail: string;
@@ -86,6 +87,12 @@ export function checkLease(d: LeaseDraft): ComplianceResult {
     d.occupants.length === 0
       ? { id: 'occupants', label: 'Named occupants', light: 'red', detail: 'Company tenant must name the people who will live in the unit' }
       : { id: 'occupants', label: 'Named occupants', light: 'green', detail: d.occupants.join(', ') },
+  );
+
+  rules.push(
+    d.month6Exit
+      ? { id: 'exit', label: 'Month-6 exit right noted', light: 'green', detail: 'The company can end the lease at month 6 with notice' }
+      : { id: 'exit', label: 'Month-6 exit right noted', light: 'amber', detail: 'Add the month-6 exit clause before signing' },
   );
 
   const overall: Light = rules.some((r) => r.light === 'red') ? 'red' : rules.some((r) => r.light === 'amber') ? 'amber' : 'green';

@@ -7,7 +7,6 @@
 //
 // Greedy start (most-constrained employee first) followed by local search
 // (move to a free unit, pairwise swap, one-step ejection for unassigned people).
-import { HOTEL_NIGHT_EUR, NIGHTS_PER_MONTH, COMPANY_FEE_RATE } from '../config';
 import { siteById } from '../data/sites';
 import { formatDate, stayEnd } from '../lib/dates';
 import type {
@@ -234,9 +233,6 @@ function unassignedReason(ctx: Ctx, emp: Employee): string {
 export function planMetrics(brief: Brief, assignments: Assignment[], objective: number): PlanMetrics {
   const monthlyRent = assignments.reduce((s, a) => s + a.rent, 0);
   const commutes = assignments.map((a) => a.commuteMin);
-  const people = brief.employees.length;
-  const hotelMonthly = people * HOTEL_NIGHT_EUR * NIGHTS_PER_MONTH;
-  const ourMonthly = monthlyRent * (1 + COMPANY_FEE_RATE);
   const roles: Role[] = ['engineer', 'technician', 'manager', 'expat'];
   const budgetUse = Object.fromEntries(
     roles.map((r) => {
@@ -249,9 +245,8 @@ export function planMetrics(brief: Brief, assignments: Assignment[], objective: 
     totalRent: monthlyRent * brief.months,
     avgCommuteMin: commutes.length ? r1(commutes.reduce((s, c) => s + c, 0) / commutes.length) : 0,
     maxCommuteMin: commutes.length ? r1(Math.max(...commutes)) : 0,
-    hotelMonthly: Math.round(hotelMonthly * 100) / 100,
-    savingVsHotelMonthly: Math.round((hotelMonthly - ourMonthly) * 100) / 100,
-    savingVsHotelPct: hotelMonthly ? (hotelMonthly - ourMonthly) / hotelMonthly : 0,
+    apartments: assignments.length,
+    apartmentMonths: assignments.length * brief.months,
     objective: Math.round(objective),
     budgetUse,
   };

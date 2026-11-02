@@ -7,18 +7,25 @@ describe('verification', () => {
     const r = verifyUnit(UNITS.find((u) => u.id === FRAUD_UNIT_ID)!, UNITS);
     expect(r.decision).toBe('reject');
     expect(r.trustScore).toBeLessThan(50);
-    expect(r.flags).toEqual(expect.arrayContaining(['Document consistency', 'Duplicate-photo scan', 'Price vs area median']));
+    expect(r.flags).toEqual(expect.arrayContaining(['Operator KYC', 'Catastro ownership', 'Duplicate-photo scan', 'Price vs area median']));
     expect(r.priceDeviation).toBeLessThanOrEqual(-0.39);
   });
 
   it('approves a normal listing', () => {
-    const r = verifyUnit(UNITS.find((u) => u.id === 'U23')!, UNITS.filter((u) => u.id !== FRAUD_UNIT_ID));
+    const r = verifyUnit(UNITS.find((u) => u.id === 'MAD03')!, UNITS.filter((u) => u.id !== FRAUD_UNIT_ID));
     expect(r.decision).toBe('approve');
     expect(r.trustScore).toBe(100);
   });
 
-  it('every other seed listing passes', () => {
+  it('every other verified listing passes all checks', () => {
     const clean = UNITS.filter((u) => u.id !== FRAUD_UNIT_ID);
-    for (const u of clean) expect(verifyUnit(u, clean).trustScore, u.id).toBe(100);
+    for (const u of clean.filter((x) => x.status === 'verified')) expect(verifyUnit(u, clean).trustScore, u.id).toBe(100);
+  });
+
+  it('a Barcelona listing without regional registration is flagged', () => {
+    const u = UNITS.find((x) => x.city === 'Barcelona' && x.status === 'pending')!;
+    const r = verifyUnit(u, UNITS);
+    expect(r.flags).toEqual(['Regional registration']);
+    expect(r.decision).toBe('approve');
   });
 });
