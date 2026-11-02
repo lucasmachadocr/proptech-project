@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { verifyUnit, type VerificationResult } from '../../ai/verify';
 import PhotoThumb from '../../components/PhotoThumb';
-import { AiBadge, Badge, Button, Card, Kpi, PageHeader, cx, tableCls, tableWrap, td, th } from '../../components/ui';
+import { AiBadge, Badge, Button, Card, Kpi, PageHeader, cx, tableWrap, td, th } from '../../components/ui';
 import { PROVIDERS } from '../../data/providers';
 import { UNITS } from '../../data/units';
 import { eur } from '../../lib/format';
@@ -56,7 +56,7 @@ export default function VerificationPage() {
       <PageHeader
         eyebrow="Operations · verification"
         title="Verification queue"
-        subtitle="Every new listing goes through four automated checks before a human video visit. The checks produce a trust score; the ops manager approves or rejects."
+        subtitle="Every new listing goes through five automated checks (KYC, Catastro, duplicate photos, price, regional registration) before a human video visit. The checks produce a trust score; the ops manager approves or rejects."
         actions={
           <Button onClick={runAll} data-testid="run-checks">
             Run AI checks on queue <AiBadge />
@@ -72,11 +72,10 @@ export default function VerificationPage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <div className={tableWrap}>
-          <table className={tableCls}>
+          <table className="w-full border-collapse text-sm">
             <thead className="bg-stone-50">
               <tr>
                 <th className={th}>Listing</th>
-                <th className={th}>Provider</th>
                 <th className={`${th} text-right`}>Rent</th>
                 <th className={`${th} text-right`}>Trust</th>
                 <th className={th}>Result</th>
@@ -97,9 +96,8 @@ export default function VerificationPage() {
                       <button type="button" className="text-left font-medium text-stone-900 hover:underline" onClick={() => setSelected(u.id)}>
                         {u.id} · {u.type === 'studio' ? 'Studio' : u.type.replace('bed', '-bed')} {u.zone}
                       </button>
-                      <div className="text-xs text-stone-500">{u.address}</div>
+                      <div className="text-xs text-stone-500">{PROVIDERS.find((p) => p.id === u.providerId)?.name} · {u.zone}</div>
                     </td>
-                    <td className={`${td} text-stone-600`}>{PROVIDERS.find((p) => p.id === u.providerId)?.name}</td>
                     <td className={`${td} num text-right`}>{eur(u.rent)}</td>
                     <td className={`${td} num text-right font-semibold`}>{r ? r.trustScore : '—'}</td>
                     <td className={td}>

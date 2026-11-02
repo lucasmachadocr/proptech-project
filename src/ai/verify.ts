@@ -92,7 +92,7 @@ export function verifyUnit(unit: Unit, units: Unit[], providers: Provider[] = PR
     label: 'Price vs area median',
     weight: 20,
     pass: dev >= PRICE_OUTLIER_THRESHOLD,
-    detail: `€${unit.rent}/mo vs median €${Math.round(med)} for ${typeLabel} in ${unit.zone} (${dev >= 0 ? '+' : '−'}${Math.abs(Math.round(dev * 100))}%)`,
+    detail: `€${unit.rent.toLocaleString('en-GB')}/mo vs median €${Math.round(med).toLocaleString('en-GB')} for ${typeLabel} in ${unit.zone} (${dev >= 0 ? '+' : '−'}${Math.abs(Math.round(dev * 100))}%)`,
   });
 
   // 5. Regional registration, only where the region requires it.
