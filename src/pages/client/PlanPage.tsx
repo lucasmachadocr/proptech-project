@@ -1,230 +1,138 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { llm } from '../../ai/llm';
-import MapView, { type MapUnit } from '../../components/MapView';
-import { AiBadge, Badge, Button, Card, Empty, Kpi, LinkButton, PageHeader, tableCls, tableWrap, td, th } from '../../components/ui';
-import { ROLE_LABEL } from '../../data/brief';
-import { COMPANIES } from '../../data/companies';
-import { PROVIDERS } from '../../data/providers';
+import CityMap from '../../components/CityMap';
+import { AiBadge, Badge, Explain, Kpi, LinkButton } from '../../components/ui';
+import { FACTS } from '../../data/facts';
+import { providerById } from '../../data/providers';
 import { siteById } from '../../data/sites';
-import { formatDate, stayEnd } from '../../lib/dates';
+import { UNIT_TYPE_SHORT } from '../../data/units';
+import { startStep } from '../../demo/steps';
 import { eur, pct } from '../../lib/format';
-import { ensureDemoPlan, useStore } from '../../store';
-import type { Role, Tradeoff } from '../../types';
-
-const KIND_TONE: Record<Tradeoff['kind'], 'accent' | 'amber' | 'neutral' | 'red' | 'blue'> = {
-  cost: 'accent',
-  commute: 'amber',
-  rule: 'blue',
-  excluded: 'red',
-  move: 'amber',
-  info: 'neutral',
-};
-const KIND_LABEL: Record<Tradeoff['kind'], string> = { cost: 'Cost', commute: 'Commute', rule: 'Rule', excluded: 'Excluded', move: 'Move', info: 'Method' };
+import { companyInvoice, tierLabel } from '../../lib/money';
+import { useStore } from '../../store';
 
 export default function PlanPage() {
   const navigate = useNavigate();
-  const { brief, plan, units, approvedAt, approvePlan } = useStore();
+  const { brief, plan, units, reviewedAt, approvedAt, approvePlan, flex, setFlex, demoStep } = useStore();
   const [summary, setSummary] = useState('');
-  const site = siteById(brief.siteId);
-
-  const mapUnits = useMemo<MapUnit[]>(() => {
-    if (!plan) return [];
-    const assigned = new Map(plan.assignments.map((a) => [a.unitId, a.employeeId]));
-    return units
-      .filter((u) => u.status === 'verified' && (assigned.has(u.id) || u.town === 'Zaragoza' || ['Villanueva de Gállego', 'Zuera', 'San Juan de Mozarrifar', 'Utebo', 'Casetas', 'La Cartuja Baja'].includes(u.zone)))
-      .map((u) => ({ unit: u, state: assigned.has(u.id) ? 'assigned' : 'free', label: assigned.has(u.id) ? brief.employees.find((e) => e.id === assigned.get(u.id))?.name : undefined }));
-  }, [plan, units, brief]);
+  const [showList, setShowList] = useState(false);
 
   useEffect(() => {
     if (plan) llm.explainPlan(plan, brief).then(setSummary);
   }, [plan, brief]);
 
-  if (!plan) {
+  if (!plan || !reviewedAt) {
     return (
-      <Empty title="No plan yet">
-        <p className="w-full">Submit a brief, or load the demo team to see the engine at work.</p>
-        <LinkButton to="/client/brief" variant="secondary">
-          Go to brief
-        </LinkButton>
-        <Button
-          onClick={() => {
-            ensureDemoPlan();
-          }}
-        >
-          Generate demo plan
-        </Button>
-      </Empty>
+      <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center">
+        <h1 className="text-xl font-semibold text-ink">{plan ? 'Your plan is with our team' : 'No plan yet'}</h1>
+        <p className="mt-2 text-stone-600">
+          {plan ? `We check every plan before you see it — target under ${FACTS.kpi.briefToPlanHours} hours.` : 'Send a brief and we will come back with one plan for the whole team.'}
+        </p>
+        <div className="mt-6">
+          <LinkButton to={plan ? '/ops/review' : '/client/brief'}>{plan ? 'See the Ops review' : 'Go to the brief'}</LinkButton>
+        </div>
+      </div>
     );
   }
 
+  const site = siteById(brief.siteId);
   const m = plan.metrics;
-  const company = COMPANIES.find((c) => c.id === brief.companyId)!;
+  const inv = companyInvoice(m.monthlyRent, m.apartments, flex);
+  const missionTotal = companyInvoice(m.totalRent, m.apartments, flex).total;
+  const chosen = new Map(plan.assignments.map((a) => [a.unitId, brief.employees.find((e) => e.id === a.employeeId)?.name ?? '']));
+
+  const approve = () => {
+    approvePlan();
+  };
+  const next = () => navigate(demoStep ? startStep(4) : '/client/change');
 
   return (
-    <>
-      <PageHeader
-        eyebrow={`Client · ${company.name}`}
-        title={brief.projectName}
-        subtitle={
-          <>
-            {brief.employees.length} people · {formatDate(brief.start)} → {formatDate(stayEnd(brief.start, brief.months))} ({brief.months} months) · site: {site.operator}, {site.town}
-          </>
-        }
-        actions={
-          approvedAt ? (
-            <>
-              <Badge tone="green">✓ Approved {new Date(approvedAt).toLocaleDateString('en-GB')}</Badge>
-              <LinkButton to="/client/change" variant="secondary">
-                Request a change
-              </LinkButton>
-              <LinkButton to="/client/invoice">View invoice</LinkButton>
-            </>
-          ) : (
-            <>
-              <LinkButton to="/client/brief" variant="secondary">
-                Edit brief
-              </LinkButton>
-              <Button onClick={approvePlan} data-testid="approve-plan">
-                Approve plan
-              </Button>
-            </>
-          )
-        }
-      />
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="plan-kpis">
-        <Kpi label="Monthly rent" value={eur(m.monthlyRent)} hint={`${eur(m.totalRent)} over ${brief.months} months`} />
-        <Kpi label="Average commute" value={`${m.avgCommuteMin} min`} hint={`Max ${m.maxCommuteMin} min · cap ${brief.maxCommuteMin} min (estimate)`} />
-        <Kpi label="Saving vs hotel" value={eur(m.savingVsHotelMonthly)} hint={`${pct(m.savingVsHotelPct)} per month vs €74/night, incl. our 8% fee`} />
-        <Kpi label="Plan computed in" value={<span data-testid="computed-ms">{plan.computedMs < 1000 ? `${plan.computedMs} ms` : `${(plan.computedMs / 1000).toFixed(2)} s`}</span>} hint={`${plan.candidatesConsidered.toLocaleString('en-GB')} person × unit pairs evaluated`} ai />
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold tracking-widest text-brand-700 uppercase">Step 3 · Approve</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">
+            {m.apartments} apartments near the {site.city} site
+          </h1>
+          <p className="mt-2 text-lg text-stone-600">{summary}</p>
+        </div>
+        {approvedAt ? (
+          <div className="flex items-center gap-3">
+            <Badge tone="green">✓ Approved</Badge>
+            <button type="button" onClick={next} className="rounded-full bg-brand-700 px-6 py-3 font-semibold text-white hover:bg-brand-800" data-testid="plan-next">
+              Next: the project changes →
+            </button>
+          </div>
+        ) : (
+          <button type="button" onClick={approve} className="rounded-full bg-brand-700 px-8 py-3.5 text-lg font-semibold text-white hover:bg-brand-800" data-testid="approve-plan">
+            Approve the plan
+          </button>
+        )}
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-        <MapView site={site} units={mapUnits} height={460} />
-        <Card
-          title={
-            <span className="flex items-center gap-2">
-              Why this plan <AiBadge />
-            </span>
+      <div className="grid gap-3 sm:grid-cols-3" data-testid="plan-kpis">
+        <Kpi
+          label="You pay per month"
+          value={eur(inv.total)}
+          hint={`${eur(missionTotal)} for ${brief.months} months`}
+          explain={
+            <>
+              Rent {eur(inv.rent)} + markup {pct(inv.markupRate)} ({tierLabel(m.apartments)}) {eur(inv.markup)}
+              {flex ? ` + Flex ${pct(FACTS.pricing.flex)} ${eur(inv.flex)}` : ''}. VAT not shown.
+            </>
           }
-        >
-          {summary && <p className="mb-4 text-sm leading-relaxed text-stone-700">{summary}</p>}
-          <ul className="space-y-3" data-testid="tradeoffs">
+          testId="kpi-pay"
+        />
+        <Kpi label="Average commute" value={`${m.avgCommuteMin} min`} hint={`Longest ${Math.round(m.maxCommuteMin)} min · limit ${brief.maxCommuteMin} min`} explain="Straight-line distance × 1.3 road factor at 50 km/h, from each apartment to the work site." />
+        <Kpi label="Team housed" value={`${plan.assignments.length} / ${brief.employees.length}`} hint="One apartment each, all verified" ai explain="Our engine compared every person with every verified apartment and picked the lowest total of rent plus commute time, within your budget and commute limit." />
+      </div>
+
+      <label className="flex w-fit items-center gap-3 rounded-full bg-white px-4 py-2 text-sm ring-1 ring-stone-200">
+        <input type="checkbox" className="h-4 w-4 accent-brand-700" checked={flex} onChange={(e) => setFlex(e.target.checked)} data-testid="flex-toggle" />
+        <span>
+          <strong>Flex</strong> (+{pct(FACTS.pricing.flex)}) included
+        </span>
+        <Explain label="What is Flex?">An optional add-on of {pct(FACTS.pricing.flex)} of rent, shown as its own line on the invoice. Half is Settle In revenue, half goes to an operator pool. What Flex covers for the company is to be confirmed by the team.</Explain>
+      </label>
+
+      <CityMap city={site.city} chosen={chosen} height={440} showZones={false} />
+
+      <div className="flex flex-wrap gap-3">
+        <button type="button" onClick={() => setShowList(!showList)} className="rounded-full px-4 py-2 text-sm font-medium ring-1 ring-stone-300 hover:ring-ink" aria-expanded={showList}>
+          {showList ? 'Hide the list' : 'Show who lives where'}
+        </button>
+        <details className="rounded-2xl text-sm">
+          <summary className="cursor-pointer rounded-full px-4 py-2 font-medium ring-1 ring-stone-300 hover:ring-ink">
+            Why this plan? <AiBadge />
+          </summary>
+          <ul className="mt-3 max-w-3xl space-y-2 text-stone-700" data-testid="tradeoffs">
             {plan.tradeoffs.map((t, i) => (
-              <li key={i} className="flex gap-3 text-sm leading-snug text-stone-700">
-                <Badge tone={KIND_TONE[t.kind]} className="mt-0.5 h-fit">
-                  {KIND_LABEL[t.kind]}
-                </Badge>
-                <span>{t.text}</span>
-              </li>
+              <li key={i}>• {t.text}</li>
             ))}
           </ul>
-          <h3 className="mt-5 mb-2 text-xs font-semibold tracking-wide text-stone-500 uppercase">Budget use by role</h3>
-          <div className="space-y-2">
-            {(Object.keys(m.budgetUse) as Role[])
-              .filter((r) => m.budgetUse[r].count > 0)
-              .map((r) => {
-                const b = m.budgetUse[r];
-                const p = b.used / b.cap;
-                return (
-                  <div key={r} className="text-xs">
-                    <div className="flex justify-between text-stone-600">
-                      <span>
-                        {ROLE_LABEL[r]} ×{b.count}
-                      </span>
-                      <span className="num">
-                        {eur(b.used)} / {eur(b.cap)} ({pct(p)})
-                      </span>
-                    </div>
-                    <div className="mt-1 h-1.5 rounded-full bg-stone-100">
-                      <div className="h-1.5 rounded-full bg-brand-600" style={{ width: `${Math.min(100, p * 100)}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </Card>
+        </details>
       </div>
 
-      {plan.unassigned.length > 0 && (
-        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-          <strong>{plan.unassigned.length} not housed:</strong>{' '}
-          {plan.unassigned.map((u) => `${brief.employees.find((e) => e.id === u.employeeId)?.name} — ${u.reason}`).join(' · ')}
-        </div>
+      {showList && (
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="plan-list">
+          {plan.assignments.map((a) => {
+            const e = brief.employees.find((x) => x.id === a.employeeId)!;
+            const u = units.find((x) => x.id === a.unitId)!;
+            return (
+              <li key={a.unitId} className="rounded-2xl border border-stone-200 bg-white p-4">
+                <div className="font-semibold text-ink">{e.name}</div>
+                <div className="text-sm text-stone-600">
+                  {UNIT_TYPE_SHORT[u.type]} · {u.zone} · {Math.round(a.commuteMin)} min
+                </div>
+                <div className="num mt-1 text-sm text-stone-500">
+                  {eur(a.rent)}/mo · {providerById(u.providerId).name}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
-
-      <h2 className="mt-8 mb-3 text-base font-semibold text-stone-900">Allocation per employee</h2>
-      <div className={tableWrap}>
-        <table className={tableCls} data-testid="plan-table">
-          <thead className="bg-stone-50">
-            <tr>
-              <th className={th}>Employee</th>
-              <th className={th}>Role</th>
-              <th className={th}>Home</th>
-              <th className={th}>Provider</th>
-              <th className={`${th} text-right`}>Rent / mo</th>
-              <th className={`${th} text-right`}>vs cap</th>
-              <th className={`${th} text-right`}>Commute</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-stone-100">
-            {brief.employees.map((e) => {
-              const a = plan.assignments.find((x) => x.employeeId === e.id);
-              const u = a && units.find((x) => x.id === a.unitId);
-              const prov = u && PROVIDERS.find((p) => p.id === u.providerId);
-              return (
-                <tr key={e.id} className="hover:bg-stone-50/60">
-                  <td className={td}>
-                    <div className="font-medium text-stone-900">{e.name}</div>
-                    <div className="text-xs text-stone-500">{e.title}</div>
-                  </td>
-                  <td className={td}>{ROLE_LABEL[e.role]}</td>
-                  <td className={td}>
-                    {u ? (
-                      <>
-                        <div className="text-stone-900">{u.title}</div>
-                        <div className="text-xs text-stone-500">
-                          {u.id} · {u.sqm} m²
-                        </div>
-                      </>
-                    ) : (
-                      <Badge tone="red">Unassigned</Badge>
-                    )}
-                  </td>
-                  <td className={`${td} text-stone-600`}>{prov?.name}</td>
-                  <td className={`${td} num text-right font-medium`}>{a ? eur(a.rent) : '—'}</td>
-                  <td className={`${td} num text-right text-stone-500`}>{a ? pct(a.rent / brief.budgetCaps[e.role]) : '—'}</td>
-                  <td className={`${td} num text-right`}>{a ? `${Math.round(a.commuteMin)} min` : '—'}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-          <tfoot className="border-t border-stone-200 bg-stone-50 font-semibold">
-            <tr>
-              <td className={td} colSpan={4}>
-                Total · {plan.assignments.length} households
-              </td>
-              <td className={`${td} num text-right`}>{eur(m.monthlyRent)}</td>
-              <td className={td} />
-              <td className={`${td} num text-right`}>{m.avgCommuteMin} min avg</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-      {!approvedAt && (
-        <div className="mt-6 flex justify-end">
-          <Button
-            onClick={() => {
-              approvePlan();
-              navigate('/client/change');
-            }}
-            variant="secondary"
-          >
-            Approve and continue to changes →
-          </Button>
-        </div>
-      )}
-    </>
+    </div>
   );
 }

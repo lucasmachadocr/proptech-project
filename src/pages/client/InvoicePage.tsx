@@ -1,128 +1,111 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { APP_NAME } from '../../config';
-import { Button, Card, Empty, Kpi, PageHeader, inputCls, labelCls } from '../../components/ui';
-import { COMPANIES } from '../../data/companies';
-import { PROVIDERS } from '../../data/providers';
+import { Explain, LinkButton, ToConfirm, cx } from '../../components/ui';
+import { companyById } from '../../data/companies';
+import { FACTS } from '../../data/facts';
 import { addMonths, formatDate, stayEnd } from '../../lib/dates';
-import { eur, eurCents } from '../../lib/format';
-import { invoiceTotals } from '../../lib/money';
-import { ensureDemoPlan, useStore } from '../../store';
+import { eur, pct } from '../../lib/format';
+import { companyInvoice, tierLabel } from '../../lib/money';
+import { useStore } from '../../store';
 
 export default function InvoicePage() {
-  const { brief, plan, units } = useStore();
-  const [month, setMonth] = useState(0);
+  const { brief, plan, approvedAt, flex } = useStore();
+  const [view, setView] = useState<'mission' | 'month'>('mission');
 
-  if (!plan) {
+  if (!plan || !approvedAt) {
     return (
-      <Empty title="No plan yet">
-        <Button onClick={() => ensureDemoPlan()}>Generate demo plan</Button>
-      </Empty>
+      <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center">
+        <h1 className="text-xl font-semibold text-ink">No invoice yet</h1>
+        <p className="mt-2 text-stone-600">The first invoice is issued once the plan is approved.</p>
+        <div className="mt-6">
+          <LinkButton to="/client/plan">Go to the plan</LinkButton>
+        </div>
+      </div>
     );
   }
 
-  const company = COMPANIES.find((c) => c.id === brief.companyId)!;
-  const periodStart = addMonths(brief.start, month);
-  const monthly = invoiceTotals(plan.metrics.monthlyRent);
-  const project = invoiceTotals(plan.metrics.totalRent);
-  const label = new Date(`${periodStart}T00:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-  const number = `SI-${periodStart.slice(0, 7).replace('-', '')}-${brief.id.slice(-3)}`;
+  const company = companyById(brief.companyId);
+  const m = plan.metrics;
+  const rent = view === 'mission' ? m.totalRent : m.monthlyRent;
+  const inv = companyInvoice(rent, m.apartments, flex);
+  const period = view === 'mission' ? `${formatDate(brief.start)} – ${formatDate(stayEnd(brief.start, brief.months))}` : `${formatDate(brief.start)} – ${formatDate(stayEnd(addMonths(brief.start, 0), 1))}`;
 
   return (
-    <>
-      <PageHeader
-        eyebrow="Client · step 4"
-        title="One invoice per project, every month"
-        subtitle="Instead of fifteen landlords and fifteen invoices, the client receives one consolidated invoice. Rent is collected by a licensed payment provider and paid out to each landlord."
-        actions={
-          <label className={labelCls}>
-            <span className="sr-only">Billing month</span>
-            <select className={inputCls} value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-              {Array.from({ length: brief.months }, (_, i) => (
-                <option key={i} value={i}>
-                  {new Date(`${addMonths(brief.start, i)}T00:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' })}
-                </option>
-              ))}
-            </select>
-          </label>
-        }
-      />
-
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi label="This month" value={eurCents(monthly.total)} hint="incl. VAT on the fee" />
-        <Kpi label="Project rent" value={eur(project.rent)} hint={`${brief.months} months`} />
-        <Kpi label="Project invoiced (excl. VAT)" value={eur(project.invoicedExclVat)} hint="rent + 8% fee" />
-        <Kpi label="Landlords paid through us" value={new Set(plan.assignments.map((a) => units.find((u) => u.id === a.unitId)?.providerId)).size} hint="one payment run per month" />
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div>
+        <p className="text-sm font-semibold tracking-widest text-brand-700 uppercase">Step 5 · Invoice</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">One invoice for the whole team</h1>
+        <p className="mt-2 text-lg text-stone-600">
+          {m.apartments} apartments, {brief.months} months, one line per cost — not {m.apartments} landlords and {m.apartments} invoices.
+        </p>
       </div>
 
-      <Card className="mx-auto max-w-4xl" title={`Invoice ${number}`} actions={<Button variant="secondary" size="sm" onClick={() => window.print()}>Print</Button>}>
-        <div className="grid gap-6 text-sm sm:grid-cols-2">
+      <div role="tablist" aria-label="Invoice period" className="inline-flex rounded-full bg-white p-1 ring-1 ring-stone-200">
+        {(['mission', 'month'] as const).map((v) => (
+          <button key={v} type="button" role="tab" aria-selected={view === v} onClick={() => setView(v)} className={cx('rounded-full px-4 py-1.5 text-sm font-medium', view === v ? 'bg-ink text-white' : 'text-stone-600')}>
+            {v === 'mission' ? 'Whole mission' : 'One month'}
+          </button>
+        ))}
+      </div>
+
+      <section className="rounded-2xl border border-stone-200 bg-white p-6 sm:p-8" data-testid="invoice">
+        <div className="flex flex-wrap justify-between gap-4 text-sm">
           <div>
-            <div className="text-xs font-semibold tracking-wide text-stone-500 uppercase">Billed to</div>
-            <div className="mt-1 font-medium text-stone-900">{company.legalName}</div>
-            <div className="text-stone-600">CIF {company.cif}</div>
-            <div className="text-stone-600">{company.contact}</div>
+            <div className="text-stone-500">Billed to</div>
+            <div className="font-semibold text-ink">{company.legalName}</div>
           </div>
           <div className="sm:text-right">
-            <div className="text-xs font-semibold tracking-wide text-stone-500 uppercase">From</div>
-            <div className="mt-1 font-medium text-stone-900">{APP_NAME} S.L. (demo)</div>
-            <div className="text-stone-600">Project: {brief.projectName}</div>
-            <div className="text-stone-600">
-              Period: {formatDate(periodStart)} – {formatDate(stayEnd(periodStart, 1))} · {label}
-            </div>
+            <div className="text-stone-500">From {APP_NAME} · {period}</div>
+            <div className="font-semibold text-ink">{brief.projectName}</div>
           </div>
         </div>
 
-        <div className="mt-6 overflow-x-auto">
-          <table className="w-full min-w-[560px] text-sm">
-            <thead>
-              <tr className="border-b border-stone-200 text-left text-xs font-semibold tracking-wide text-stone-500 uppercase">
-                <th className="py-2 pr-3">Unit</th>
-                <th className="py-2 pr-3">Occupant</th>
-                <th className="py-2 pr-3">Landlord</th>
-                <th className="py-2 text-right">Rent</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {plan.assignments.map((a) => {
-                const u = units.find((x) => x.id === a.unitId)!;
-                return (
-                  <tr key={a.unitId}>
-                    <td className="py-2 pr-3">
-                      {u.id} · {u.title}
-                    </td>
-                    <td className="py-2 pr-3 text-stone-600">{brief.employees.find((e) => e.id === a.employeeId)?.name}</td>
-                    <td className="py-2 pr-3 text-stone-600">{PROVIDERS.find((p) => p.id === u.providerId)?.name}</td>
-                    <td className="num py-2 text-right">{eurCents(a.rent)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        <dl className="num mt-4 ml-auto max-w-sm space-y-1.5 border-t border-stone-200 pt-4 text-sm" data-testid="invoice-totals">
-          <Row label={`Rent (${plan.assignments.length} units) · VAT-exempt`} value={eurCents(monthly.rent)} />
-          <Row label="Service fee 8%" value={eurCents(monthly.fee)} />
-          <Row label="VAT 21% on the fee" value={eurCents(monthly.vatOnFee)} />
-          <div className="flex justify-between border-t border-stone-200 pt-2 text-base font-semibold text-stone-900">
-            <dt>Total due</dt>
-            <dd>{eurCents(monthly.total)}</dd>
+        <dl className="num mt-8 space-y-4 text-base" data-testid="invoice-totals">
+          <Line label={`Rent · ${m.apartments} apartments × ${view === 'mission' ? `${brief.months} months` : '1 month'}`} value={eur(inv.rent)} explain="The monthly rents agreed with each operator, passed through at cost." />
+          <Line
+            label={`Settle In markup · ${pct(inv.markupRate)}`}
+            value={eur(inv.markup)}
+            explain={`Our fee to the company: ${pct(inv.markupRate)} of rent for missions of ${tierLabel(m.apartments)} (5% for 1–9, 4% for 10–24, 3% for 25+).`}
+            testId="line-markup"
+          />
+          {flex && (
+            <Line
+              label={`Flex · ${pct(FACTS.pricing.flex)}`}
+              value={eur(inv.flex)}
+              explain={`Optional add-on, ${pct(FACTS.pricing.flex)} of rent: ${pct(FACTS.pricing.flexRevenue)} is Settle In revenue and ${pct(FACTS.pricing.flexPool)} goes to an operator pool.`}
+              testId="line-flex"
+            />
+          )}
+          <div className="flex items-baseline justify-between border-t border-stone-200 pt-4 text-xl font-semibold text-ink">
+            <dt>Total</dt>
+            <dd data-testid="invoice-total">{eur(inv.total)}</dd>
           </div>
         </dl>
-        <p className="mt-6 text-xs text-stone-500">
-          Residential rent is exempt from VAT (art. 20.1.23 Spanish VAT Act); VAT applies to our service fee only. Payment by SEPA transfer to the segregated account of our licensed payment
-          provider within 30 days. Landlords are paid rent minus a 10% commission on the 5th of each month.
-        </p>
-      </Card>
-    </>
+
+        <ul className="mt-8 space-y-1 text-sm text-stone-600">
+          <li>• Payment: {FACTS.terms.billing}.</li>
+          <li>• Operators are paid {FACTS.terms.payout.toLowerCase()}.</li>
+          <li>
+            • VAT not shown on demo totals <ToConfirm />
+          </li>
+        </ul>
+      </section>
+
+      <p className="text-sm text-stone-600">
+        Where does this money go? <a href="#/ops/ledger" className="font-medium text-ink underline underline-offset-4">See the payouts ledger in the Ops console →</a>
+      </p>
+    </div>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Line({ label, value, explain, testId }: { label: string; value: string; explain: ReactNode; testId?: string }) {
   return (
-    <div className="flex justify-between text-stone-700">
-      <dt>{label}</dt>
-      <dd>{value}</dd>
+    <div className="flex items-baseline justify-between gap-4" data-testid={testId}>
+      <dt className="flex items-center gap-2 text-stone-700">
+        {label}
+        <Explain>{explain}</Explain>
+      </dt>
+      <dd className="text-ink">{value}</dd>
     </div>
   );
 }

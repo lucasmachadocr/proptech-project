@@ -1,83 +1,65 @@
-import { useNavigate } from 'react-router-dom';
-import { AiBadge, Badge } from '../../components/ui';
-import { APP_NAME } from '../../config';
-import { PROVIDERS } from '../../data/providers';
-import { SITES } from '../../data/sites';
-import { DEMO_STEPS, startStep } from '../../demo/steps';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import CityMap, { CityChips } from '../../components/CityMap';
+import { APP_ONE_LINER } from '../../config';
+import { FACTS } from '../../data/facts';
+import { FRAUD_UNIT_ID } from '../../data/units';
+import { startStep } from '../../demo/steps';
 import { useStore } from '../../store';
 
 export default function DemoPage() {
   const navigate = useNavigate();
-  const units = useStore((s) => s.units);
-  const steps = DEMO_STEPS;
-
-  const verifiedUnits = units.filter((u) => u.status === 'verified').length;
+  const [city, setCity] = useState<string>(FACTS.demo.city);
 
   return (
-    <>
-      <section className="relative overflow-hidden rounded-2xl border border-stone-200 bg-white px-5 py-7 shadow-sm sm:px-10 sm:py-10">
-        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-brand-50" aria-hidden />
-        <div className="relative max-w-3xl">
-          <Badge tone="accent">Investor demo · 13 Nov 2026</Badge>
-          <h1 className="mt-4 text-[26px] leading-tight font-semibold tracking-tight text-stone-900 sm:text-4xl">
-            Housing for project teams, planned like a project.
-          </h1>
-          <p className="mt-4 text-sm leading-relaxed text-stone-600 sm:text-base">
-            {APP_NAME} houses the engineers, technicians, managers and expat families who move to Zaragoza for the data-centre and gigafactory build-outs. A company sends one brief; our engine
-            proposes one plan; leases, payments and changes run on one platform with one monthly invoice.
-          </p>
-          <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Stat k="Project sites" v={String(SITES.length)} />
-            <Stat k="Verified units" v={String(verifiedUnits)} />
-            <Stat k="Professional providers" v={String(PROVIDERS.length)} />
-            <Stat k="Take rate" v="18%" />
-          </dl>
-          <button
-            type="button"
-            data-testid="start-guided-demo"
-            onClick={() => navigate(startStep(1))}
-            className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-700 px-5 py-3 text-base font-semibold text-white shadow-sm hover:bg-brand-800 sm:w-auto"
-          >
-            ▶ Start guided demo
-          </button>
-          <p className="mt-2 text-xs text-stone-500">Walks through the five steps with a bar at the bottom of the screen: Next, Back and talking points.</p>
-        </div>
+    <div className="space-y-12">
+      <section className="mx-auto max-w-3xl pt-4 text-center sm:pt-10">
+        <p className="text-sm font-semibold tracking-widest text-brand-700 uppercase">{FACTS.brand.tagline}</p>
+        <h1 className="mt-4 text-3xl leading-tight font-semibold tracking-tight text-ink sm:text-5xl">Housing for whole project teams, booked in one go.</h1>
+        <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-stone-600">{APP_ONE_LINER}</p>
+        <button
+          type="button"
+          data-testid="start-demo"
+          onClick={() => navigate(startStep(1))}
+          className="mt-8 inline-flex items-center gap-2 rounded-full bg-brand-700 px-8 py-4 text-lg font-semibold text-white shadow-sm hover:bg-brand-800"
+        >
+          Start the demo →
+        </button>
+        <p className="mt-3 text-sm text-stone-500">3 minutes · 5 steps: Brief → Plan → Approve → Re-plan → Invoice</p>
       </section>
 
-      <h2 className="mt-8 mb-4 text-lg font-semibold text-stone-900">Run the demo in five steps</h2>
-      <ol className="grid gap-4 md:grid-cols-2 xl:grid-cols-5" data-testid="demo-steps">
-        {steps.map((s) => (
-          <li key={s.n} className="flex flex-col rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="num grid h-8 w-8 place-items-center rounded-full bg-stone-900 text-sm font-semibold text-white">{s.n}</span>
-              {s.ai && <AiBadge />}
-            </div>
-            <h3 className="mt-3 text-[15px] leading-snug font-semibold text-stone-900">{s.title}</h3>
-            <p className="mt-2 flex-1 text-sm leading-relaxed text-stone-600">{s.say}</p>
-            <div className="mt-4 text-xs text-stone-400">Opens {s.where}</div>
-            <button
-              type="button"
-              data-testid={`demo-step-${s.n}`}
-              onClick={() => navigate(startStep(s.n))}
-              className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-brand-700 px-3 py-2.5 text-sm font-medium text-white hover:bg-brand-800"
-            >
-              {s.button} →
-            </button>
-          </li>
-        ))}
-      </ol>
-      <p className="mt-6 text-xs text-stone-500">
-        Each step can run on its own: it prepares whatever it needs. Use “Reset demo” in the footer to start clean. All companies, people and listings are fictional demo data.
-      </p>
-    </>
+      <section aria-labelledby="explore" className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 id="explore" className="text-xl font-semibold text-ink">
+              Where we house teams
+            </h2>
+            <p className="text-sm text-stone-600">Pick a city: the dark pin is the work site, the rings show 15 and 30 minutes by car.</p>
+          </div>
+          <CityChips city={city} onChange={setCity} />
+        </div>
+        <CityMap city={city} height={380} />
+      </section>
+
+      <section aria-labelledby="behind" className="border-t border-stone-200 pt-8">
+        <h2 id="behind" className="text-sm font-semibold tracking-wide text-stone-500 uppercase">
+          Behind the scenes · Ops console
+        </h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <BehindLink to={`/ops/verification?focus=${FRAUD_UNIT_ID}`} title="A fake listing gets caught" text="KYC, Catastro, duplicate photos, price check" testId="link-fraud" onClick={() => useStore.getState().setUnitStatus(FRAUD_UNIT_ID, 'pending')} />
+          <BehindLink to="/ops/compliance?scenario=noncompliant" title="A bad lease can't be signed" text="Seasonal-lease rules (RDL 29/2026)" testId="link-lease" />
+          <BehindLink to="/ops/ledger" title="Where the money goes" text="Operator payout · our revenue · Flex pool" testId="link-ledger" />
+        </div>
+      </section>
+    </div>
   );
 }
 
-function Stat({ k, v }: { k: string; v: string }) {
+function BehindLink({ to, title, text, testId, onClick }: { to: string; title: string; text: string; testId: string; onClick?: () => void }) {
   return (
-    <div>
-      <dt className="text-xs text-stone-500">{k}</dt>
-      <dd className="num text-2xl font-semibold text-stone-900">{v}</dd>
-    </div>
+    <Link to={to} onClick={onClick} data-testid={testId} className="group rounded-2xl border border-stone-200 bg-white p-5 transition-colors hover:border-ink">
+      <div className="font-semibold text-ink group-hover:text-brand-700">{title} →</div>
+      <div className="mt-1 text-sm text-stone-600">{text}</div>
+    </Link>
   );
 }

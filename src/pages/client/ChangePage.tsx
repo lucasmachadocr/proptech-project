@@ -1,169 +1,128 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MapView, { type MapUnit } from '../../components/MapView';
-import { AiBadge, Badge, Button, Card, Empty, Kpi, LinkButton, PageHeader, inputCls, labelCls, tableCls, tableWrap, td, th } from '../../components/ui';
-import { ROLE_LABEL } from '../../data/brief';
+import { AiBadge, Badge, Kpi, LinkButton, inputCls, labelCls } from '../../components/ui';
 import { siteById } from '../../data/sites';
+import { UNIT_TYPE_SHORT } from '../../data/units';
+import { startStep } from '../../demo/steps';
 import { formatDate, stayEnd } from '../../lib/dates';
-import { eur, signedEur } from '../../lib/format';
-import { ensureDemoPlan, useStore } from '../../store';
-import type { DiffKind } from '../../types';
-
-const KIND: Record<DiffKind, { tone: 'neutral' | 'amber' | 'accent' | 'red'; label: string }> = {
-  kept: { tone: 'neutral', label: 'Kept' },
-  moved: { tone: 'amber', label: 'Moved' },
-  new: { tone: 'accent', label: 'New' },
-  removed: { tone: 'red', label: 'Removed' },
-};
+import { eur, pct, signedEur } from '../../lib/format';
+import { companyInvoice } from '../../lib/money';
+import { useStore } from '../../store';
 
 export default function ChangePage() {
   const navigate = useNavigate();
-  const { brief, plan, change, units, proposeChange, applyChange } = useStore();
+  const { brief, plan, approvedAt, change, units, proposeChange, applyChange, flex, demoStep } = useStore();
   const [extend, setExtend] = useState(2);
   const [add, setAdd] = useState(3);
-
   const site = siteById(brief.siteId);
+
   const mapUnits = useMemo<MapUnit[]>(() => {
     if (!change) return [];
-    const out: MapUnit[] = [];
-    for (const d of change.result.diff) {
-      const u = units.find((x) => x.id === d.toUnitId);
-      if (!u) continue;
-      const name = change.brief.employees.find((e) => e.id === d.employeeId)?.name;
-      out.push({ unit: u, state: d.kind === 'kept' ? 'assigned' : d.kind === 'moved' ? 'moved' : 'new', label: name });
-    }
-    return out;
+    return change.result.diff
+      .filter((d) => d.toUnitId)
+      .map((d) => ({
+        unit: units.find((x) => x.id === d.toUnitId)!,
+        state: d.kind === 'kept' ? 'assigned' : d.kind === 'moved' ? 'moved' : 'new',
+        label: change.brief.employees.find((e) => e.id === d.employeeId)?.name,
+      }));
   }, [change, units]);
 
-  if (!plan) {
+  if (!plan || !approvedAt) {
     return (
-      <Empty title="No approved plan yet">
-        <p className="w-full">Changes re-allocate an existing plan.</p>
-        <Button onClick={() => ensureDemoPlan()}>Generate demo plan</Button>
-      </Empty>
+      <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center">
+        <h1 className="text-xl font-semibold text-ink">Approve a plan first</h1>
+        <p className="mt-2 text-stone-600">Changes re-plan an approved mission: longer dates, more or fewer people.</p>
+        <div className="mt-6">
+          <LinkButton to="/client/plan">Go to the plan</LinkButton>
+        </div>
+      </div>
     );
   }
 
   const r = change?.result;
-  const order: DiffKind[] = ['moved', 'new', 'removed', 'kept'];
+  const changed = r?.diff.filter((d) => d.kind !== 'kept') ?? [];
+  const kept = r?.diff.filter((d) => d.kind === 'kept').length ?? 0;
+  const before = companyInvoice(plan.metrics.monthlyRent, plan.metrics.apartments, flex).total;
+  const after = r ? companyInvoice(r.plan.metrics.monthlyRent, r.plan.metrics.apartments, flex).total : 0;
+  const next = () => navigate(demoStep ? startStep(5) : '/client/invoice');
 
   return (
-    <>
-      <PageHeader
-        eyebrow="Client · step 3"
-        title="Change request → automatic re-allocation"
-        subtitle="Projects slip and teams grow. Submit the change; the engine keeps everyone it can in place, moves only those it must, and shows the cost before you approve."
-      />
+    <div className="space-y-6">
+      <div>
+        <p className="text-sm font-semibold tracking-widest text-brand-700 uppercase">Step 4 · Re-plan</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">The project changed? The plan follows.</h1>
+        <p className="mt-2 text-lg text-stone-600">Current mission: {brief.employees.length} engineers until {formatDate(stayEnd(brief.start, brief.months))}.</p>
+      </div>
 
-      <Card title="New change request">
-        <div className="flex flex-wrap items-end gap-4">
-          <Button
-            onClick={() => {
-              setExtend(2);
-              setAdd(3);
-              proposeChange(2, 3);
-            }}
-            data-testid="preset-change"
-          >
-            Extend 2 months + 3 engineers <AiBadge />
-          </Button>
-          <span className="text-sm text-stone-400">or</span>
-          <label className={labelCls}>
-            Extend by (months)
-            <input type="number" min={0} max={6} value={extend} onChange={(e) => setExtend(Number(e.target.value))} className={`${inputCls} w-28`} />
-          </label>
-          <label className={labelCls}>
-            Add engineers
-            <input type="number" min={0} max={3} value={add} onChange={(e) => setAdd(Number(e.target.value))} className={`${inputCls} w-28`} />
-          </label>
-          <Button variant="secondary" onClick={() => proposeChange(extend, add)}>
-            Re-allocate
-          </Button>
-        </div>
-        <p className="mt-3 text-xs text-stone-500">
-          Current plan: {brief.employees.length} people until {formatDate(stayEnd(brief.start, brief.months))}. Each move costs a disruption penalty in the optimiser (€400-equivalent), so the
-          engine only moves people when it has to.
-        </p>
-      </Card>
-
-      {change && r && (
-        <div className="mt-6 space-y-6" data-testid="realloc-diff">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-            <Kpi label="Change" value={<span className="text-lg">{change.label}</span>} hint={`New end ${formatDate(stayEnd(change.brief.start, change.brief.months))}`} />
-            <Kpi label="People moved" value={r.moved} hint="Units not available for the new dates" ai />
-            <Kpi label="New people housed" value={r.diff.filter((d) => d.kind === 'new' && d.toUnitId).length} />
-            <Kpi label="Monthly cost delta" value={signedEur(r.monthlyDelta)} hint={`${eur(r.plan.metrics.monthlyRent)} / month`} />
-            <Kpi label="Project rent delta" value={signedEur(r.totalDelta)} hint={`${eur(r.plan.metrics.totalRent)} over ${change.brief.months} months`} />
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-            <div className={tableWrap}>
-              <table className={tableCls}>
-                <thead className="bg-stone-50">
-                  <tr>
-                    <th className={th}>Change</th>
-                    <th className={th}>Employee</th>
-                    <th className={th}>From → to</th>
-                    <th className={th}>Why</th>
-                    <th className={`${th} text-right`}>Rent Δ / mo</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-100">
-                  {[...r.diff]
-                    .sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind))
-                    .map((d) => {
-                      const e = change.brief.employees.find((x) => x.id === d.employeeId)!;
-                      const from = units.find((u) => u.id === d.fromUnitId);
-                      const to = units.find((u) => u.id === d.toUnitId);
-                      return (
-                        <tr key={d.employeeId} className={d.kind === 'kept' ? 'text-stone-500' : ''}>
-                          <td className={td}>
-                            <Badge tone={KIND[d.kind].tone}>{KIND[d.kind].label}</Badge>
-                          </td>
-                          <td className={td}>
-                            <div className="font-medium text-stone-900">{e.name}</div>
-                            <div className="text-xs text-stone-500">{ROLE_LABEL[e.role]}</div>
-                          </td>
-                          <td className={td}>
-                            {d.kind === 'kept' ? (
-                              <span>{to?.title}</span>
-                            ) : (
-                              <span>
-                                {from ? <span className="line-through decoration-stone-400">{from.title}</span> : <span className="text-stone-400">—</span>} → <span className="font-medium text-stone-900">{to?.title ?? 'Unassigned'}</span>
-                              </span>
-                            )}
-                          </td>
-                          <td className={`${td} text-xs`}>{d.reason}</td>
-                          <td className={`${td} num text-right`}>{d.rentDelta ? signedEur(d.rentDelta) : '—'}</td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
+      {!change ? (
+        <div className="rounded-2xl border border-stone-200 bg-white p-6">
+          <button type="button" onClick={() => proposeChange(2, 3)} className="inline-flex items-center gap-2 rounded-full bg-brand-700 px-6 py-3.5 text-lg font-semibold text-white hover:bg-brand-800" data-testid="preset-change">
+            Extend 2 months and add 3 engineers <AiBadge />
+          </button>
+          <details className="mt-5">
+            <summary className="cursor-pointer text-sm font-medium text-stone-600">Try another change</summary>
+            <div className="mt-3 flex flex-wrap items-end gap-4">
+              <label className={labelCls}>
+                Extend by (months)
+                <input type="number" min={0} max={6} value={extend} onChange={(e) => setExtend(Number(e.target.value))} className={`${inputCls} w-28`} />
+              </label>
+              <label className={labelCls}>
+                Add engineers
+                <input type="number" min={0} max={3} value={add} onChange={(e) => setAdd(Number(e.target.value))} className={`${inputCls} w-28`} />
+              </label>
+              <button type="button" onClick={() => proposeChange(extend, add)} className="rounded-full px-5 py-2.5 font-medium ring-1 ring-stone-300 hover:ring-ink">
+                Re-plan
+              </button>
             </div>
-            <MapView site={site} units={mapUnits} height={420} />
+          </details>
+        </div>
+      ) : (
+        <div className="space-y-6" data-testid="realloc-diff">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Kpi label="People who move" value={r!.moved} hint={`${kept} people stay where they are`} ai explain="Someone moves only if their apartment is not free for the new dates. Every move has a cost in the optimiser, so the engine avoids it." testId="kpi-moved" />
+            <Kpi label="New people housed" value={changed.filter((d) => d.kind === 'new' && d.toUnitId).length} hint={`${r!.plan.metrics.apartments} apartments in total`} />
+            <Kpi
+              label="Change per month"
+              value={signedEur(after - before)}
+              hint={`${eur(after)} / month from now`}
+              explain={`What the company pays per month: rent + markup ${pct(r!.plan.metrics.apartments >= 25 ? 0.03 : r!.plan.metrics.apartments >= 10 ? 0.04 : 0.05)}${flex ? ' + Flex 2%' : ''}, before vs after the change.`}
+            />
           </div>
+
+          <ul className="grid gap-3 md:grid-cols-2" aria-label="What changes">
+            {changed.map((d) => {
+              const e = change.brief.employees.find((x) => x.id === d.employeeId)!;
+              const from = units.find((u) => u.id === d.fromUnitId);
+              const to = units.find((u) => u.id === d.toUnitId);
+              return (
+                <li key={d.employeeId} className="flex items-start gap-3 rounded-2xl border border-stone-200 bg-white p-4">
+                  <Badge tone={d.kind === 'moved' ? 'blue' : 'accent'}>{d.kind === 'moved' ? 'Moves' : 'New'}</Badge>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-ink">{e.name}</div>
+                    <div className="text-sm text-stone-600">
+                      {from ? `${from.zone} → ` : ''}
+                      {to ? `${UNIT_TYPE_SHORT[to.type]} in ${to.zone}` : 'No apartment found'}
+                    </div>
+                    <div className="text-xs text-stone-500">{d.reason}</div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          <MapView site={site} units={mapUnits} height={380} />
 
           <div className="flex flex-wrap items-center justify-end gap-3">
-            <span className="text-sm text-stone-600">Approving updates the leases (amendments) and next month's invoice.</span>
-            <Button
-              onClick={() => {
-                applyChange();
-                navigate('/client/plan');
-              }}
-            >
-              Approve change
-            </Button>
+            <button type="button" onClick={() => applyChange()} className="rounded-full px-5 py-2.5 font-medium ring-1 ring-stone-300 hover:ring-ink">
+              Approve the change
+            </button>
+            <button type="button" onClick={next} className="rounded-full bg-brand-700 px-6 py-3 font-semibold text-white hover:bg-brand-800" data-testid="change-next">
+              Next: the invoice →
+            </button>
           </div>
         </div>
       )}
-      {!change && (
-        <div className="mt-6">
-          <LinkButton to="/client/plan" variant="ghost">
-            ← Back to plan
-          </LinkButton>
-        </div>
-      )}
-    </>
+    </div>
   );
 }
