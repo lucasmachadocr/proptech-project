@@ -1,30 +1,48 @@
 import { describe, expect, it } from 'vitest';
-import { invoiceTotals, ledgerSummary, platformRevenue, providerPayout } from './money';
+import { FACTS } from '../data/facts';
+import { companyInvoice, directCost, markupRate, moneySplit, operatorPayout } from './money';
 
-describe('money', () => {
-  it('€162,000 rent → €174,960 invoiced (excl. VAT) and €29,160 platform revenue', () => {
-    const inv = invoiceTotals(162_000);
-    expect(inv.fee).toBe(12_960);
-    expect(inv.invoicedExclVat).toBe(174_960);
-    expect(platformRevenue(162_000)).toBe(29_160);
+const D = FACTS.demo;
+
+describe('pricing v11', () => {
+  it('markup tiers by apartments: 5% (1–9), 4% (10–24), 3% (25+)', () => {
+    expect(markupRate(1)).toBe(0.05);
+    expect(markupRate(9)).toBe(0.05);
+    expect(markupRate(10)).toBe(0.04);
+    expect(markupRate(24)).toBe(0.04);
+    expect(markupRate(25)).toBe(0.03);
+    expect(markupRate(120)).toBe(0.03);
   });
 
-  it('VAT is 21% of the fee only (residential rent is exempt)', () => {
-    const inv = invoiceTotals(27_000);
-    expect(inv.fee).toBe(2_160);
-    expect(inv.vatOnFee).toBe(453.6);
-    expect(inv.total).toBe(29_613.6);
+  it('demo case: company pays €239,034 (rent + 4% markup + 2% Flex)', () => {
+    const inv = companyInvoice(D.rentTotal, D.people, true);
+    expect(inv.markupRate).toBe(D.markupRate);
+    expect(Math.round(inv.total)).toBe(D.companyPays);
+    expect(inv.flex).toBeCloseTo(D.rentTotal * 0.02, 2);
   });
 
-  it('provider payout is rent minus 10%', () => {
-    expect(providerPayout(1_800)).toBe(1_620);
+  it('demo case: Settle In revenue €24,805; Flex pool €2,255 kept out of revenue', () => {
+    const s = moneySplit(D.rentTotal, D.people, true);
+    expect(Math.round(s.revenue)).toBe(D.revenue);
+    expect(Math.round(s.flexPool)).toBe(D.flexPool);
+    expect(s.revenue).toBeCloseTo(s.operatorCommission + s.markup + s.flexRevenue, 2);
   });
 
-  it('ledger balances: collected = payouts + revenue + VAT', () => {
-    const l = ledgerSummary(162_000);
-    expect(l.gmv).toBe(174_960);
-    expect(l.revenue).toBe(29_160);
-    expect(l.payouts + l.revenue + l.vatToTreasury).toBeCloseTo(l.collected, 2);
-    expect(l.takeRate).toBeCloseTo(0.18, 6);
+  it('money balances: company pays = operator payout + revenue + Flex pool', () => {
+    const s = moneySplit(D.rentTotal, D.people, true);
+    expect(s.operatorPayout + s.revenue + s.flexPool).toBeCloseTo(s.companyPays, 2);
+  });
+
+  it('operator payout is rent − 6%', () => {
+    expect(operatorPayout(1000)).toBe(940);
+  });
+
+  it('direct cost €36 per apartment-month → €4,320 for the demo', () => {
+    expect(directCost(D.apartmentMonths)).toBe(D.directCost);
+  });
+
+  it('without Flex the company pays rent + markup only', () => {
+    const inv = companyInvoice(10_000, 5, false);
+    expect(inv.total).toBe(10_500);
   });
 });
