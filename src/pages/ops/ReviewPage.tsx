@@ -138,7 +138,7 @@ export default function ReviewPage() {
 
           <div className="mt-6 flex items-center gap-2 text-sm text-stone-600">
             Brief → plan target: ≤ {FACTS.kpi.briefToPlanHours} h
-            <Explain>The engine builds the plan in milliseconds; the 48-hour target covers the human review and any calls with operators (business plan v11).</Explain>
+            <Explain>The engine builds the plan in milliseconds; the 48-hour target covers the human review and any calls with operators (business plan, November 2026).</Explain>
             <AiBadge />
           </div>
 

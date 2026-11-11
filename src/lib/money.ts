@@ -69,4 +69,4 @@ export function replanCost(pricePerApartmentMonth: number, people: number, month
 }
 
 export const operatorPayout = (rent: number) => cents(rent * (1 - P.operatorCommission));
-export const directCost = (apartmentMonths: number) => apartmentMonths * FACTS.demo.directCostPerApartmentMonth;
+export const directCost = (apartmentMonths: number) => Math.round(apartmentMonths * FACTS.demo.directCostPerApartmentMonth);

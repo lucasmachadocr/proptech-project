@@ -1,6 +1,6 @@
 # SETTLE_IN_FACTS — single source of numbers for the MVP
 
-Source: business plan **v11 (investor version)**. Every number shown in the app comes from this table.
+Source: business plan **(November 2026 version)** and the financial model (Excel). Every number shown in the app comes from this table.
 
 `src/data/facts.ts` mirrors the table below. `src/data/facts.test.ts` fails if a value drifts.
 To change a number, edit this table and `facts.ts` together.
@@ -13,7 +13,9 @@ To change a number, edit this table and `facts.ts` together.
 | brand.terracotta | #C4573D | v11 | |
 | brand.cream | #F7EEE7 | v11 | |
 | brand.ink | #2A2320 | v11 | |
-| cities | Madrid, Barcelona, Valencia, Málaga, Zaragoza | v11 | about 20 seeded units each |
+| cities | Madrid, Valencia, Zaragoza, Barcelona, Málaga | v11 | about 20 seeded units each |
+| rollout | Madrid: Launch city; Valencia: Year 2; Zaragoza: Year 2; Barcelona: Year 3; Málaga: Year 3 | BP Nov 2026 | Madrid first, then two cities a year |
+| launchOffer | Launch offer: 0% markup on a company's first mission, in the first year of each city | BP Nov 2026 | shown on the invoice page; demo totals unchanged |
 | pricing.operatorCommission | 0.06 | v11 | % of rent, deducted from the operator payout |
 | pricing.markup.1-9 | 0.05 | v11 | company markup on rent, by apartments in the mission |
 | pricing.markup.10-24 | 0.04 | v11 | |
@@ -33,8 +35,8 @@ To change a number, edit this table and `facts.ts` together.
 | demo.companyPays | 239034 | v11 | rent + 4% markup + 2% Flex (VAT excluded) |
 | demo.revenue | 24805 | v11 | 6% + 4% + 1 pt Flex of rent |
 | demo.flexPool | 2255 | derived | 1% of rent |
-| demo.directCostPerApartmentMonth | 36 | v11 | |
-| demo.directCost | 4320 | derived | 36 × 120 |
+| demo.directCostPerApartmentMonth | 36.4 | BP Nov 2026 | shown as about €36 in the plan |
+| demo.directCost | 4368 | derived | 36.4 × 120 |
 | options.A | 1935 / 31 | v11 | lowest cost: € per apartment-month (all-in) / average commute min |
 | options.B | 1992 / 22 | v11 | balanced — recommended and released |
 | options.C | 2140 / 12 | v11 | closest |
@@ -50,7 +52,8 @@ To change a number, edit this table and `facts.ts` together.
 | kpi.opsHoursManual | 182 | v11 | ops hours per mission done by hand |
 | kpi.opsHoursSaving | 0.79 | derived | 1 − 38.5 ÷ 182 ≈ −79% |
 | kpi.apartmentsPerAgent | 150 | v11 | 1 support agent per 150 apartments |
-| kpi.breakEvenApartments | 235 | v11 | occupied apartments at break-even |
+| kpi.breakEvenApartments | 177 | BP Nov 2026 | occupied apartments at break-even, Madrid alone |
+| kpi.breakEvenApartmentsFiveCities | 310 | BP Nov 2026 | with the five cities open (year 4) |
 | lease.minDays | 31 | v11 | more than 31 days |
 | lease.maxMonths | 12 | v11 | |
 | lease.tenantExitAfterMonths | 1 | RDL 29/2026 | tenant may leave after 1 month (LAU art. 11.2) |
@@ -65,5 +68,5 @@ To change a number, edit this table and `facts.ts` together.
 - Settle In revenue: 225,504 × (0.06 + 0.04 + 0.01) = 24,805.44 → **€24,805**
 - Flex pool (operators): 225,504 × 0.01 = **€2,255**
 - Operator payout: 225,504 × 0.94 = **€211,974**, plus the Flex pool
-- Direct cost: 120 × €36 = **€4,320**; contribution ≈ **€20,485**
+- Direct cost: 120 × €36.40 = **€4,368**; contribution = 24,805 − 4,368 = **€20,437** (€170 per apartment-month)
 - Re-plan: 3 engineers × €1,992 × 4 months = **+€23,904**; 23 apartments → still 4% tier

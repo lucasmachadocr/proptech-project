@@ -88,6 +88,7 @@ export default function InvoicePage() {
           <li>
             • {FACTS.vatNote}.
           </li>
+          <li data-testid="launch-offer">• {FACTS.launchOffer}.</li>
         </ul>
       </section>
 

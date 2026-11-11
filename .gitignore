@@ -9,3 +9,4 @@ playwright/.cache
 .vite
 *.tsbuildinfo
 netlify-deploy
+.claude/

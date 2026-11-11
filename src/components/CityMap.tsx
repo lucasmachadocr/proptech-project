@@ -15,7 +15,7 @@ const ringKm = (min: number) => ((min / 60) * AVG_SPEED_KMH) / ROAD_FACTOR;
 const BRAND = '#c4573d';
 const INK = '#2a2320';
 
-/** City chips: Madrid · Barcelona · Valencia · Málaga · Zaragoza. */
+/** City chips with the roll-out stage: Madrid (launch city), then two cities a year. */
 export function CityChips({ city, onChange }: { city: string; onChange: (c: string) => void }) {
   return (
     <div role="radiogroup" aria-label="City" className="flex flex-wrap gap-2">
@@ -29,6 +29,7 @@ export function CityChips({ city, onChange }: { city: string; onChange: (c: stri
           className={cx('rounded-full px-4 py-1.5 text-sm font-medium transition-colors', city === c ? 'bg-ink text-white' : 'bg-white text-ink ring-1 ring-stone-300 hover:ring-ink')}
         >
           {c}
+          <span className={cx('ml-2 text-xs font-normal', city === c ? 'text-white/70' : 'text-stone-500')}>{FACTS.rollout[c]}</span>
         </button>
       ))}
     </div>

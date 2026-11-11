@@ -7,7 +7,10 @@ export const FACTS = {
     cream: '#F7EEE7',
     ink: '#2A2320',
   },
-  cities: ['Madrid', 'Barcelona', 'Valencia', 'Málaga', 'Zaragoza'] as const,
+  cities: ['Madrid', 'Valencia', 'Zaragoza', 'Barcelona', 'Málaga'] as const,
+  // Roll-out in the business plan: Madrid first, then two cities a year.
+  rollout: { Madrid: 'Launch city', Valencia: 'Year 2', Zaragoza: 'Year 2', Barcelona: 'Year 3', 'Málaga': 'Year 3' },
+  launchOffer: "Launch offer: 0% markup on a company's first mission, in the first year of each city",
   pricing: {
     operatorCommission: 0.06,
     markupTiers: [
@@ -34,8 +37,8 @@ export const FACTS = {
     companyPays: 239034,
     revenue: 24805,
     flexPool: 2255,
-    directCostPerApartmentMonth: 36,
-    directCost: 4320,
+    directCostPerApartmentMonth: 36.4,
+    directCost: 4368,
   },
   options: {
     A: { label: 'Lowest cost', pricePerApartmentMonth: 1935, avgCommuteMin: 31 },
@@ -49,7 +52,8 @@ export const FACTS = {
     opsHoursManual: 182,
     opsHoursSaving: 0.79, // 1 − 38.5 / 182
     apartmentsPerAgent: 150,
-    breakEvenApartments: 235, // occupied apartments
+    breakEvenApartments: 177, // occupied apartments, Madrid alone
+    breakEvenApartmentsFiveCities: 310, // with the five cities open (year 4)
   },
   lease: { minDays: 31, maxMonths: 12, tenantExitAfterMonths: 1, exitNoticeDays: 10 },
   vatNote: 'VAT excluded on demo totals',

@@ -30,19 +30,19 @@ export default function KpiPage() {
             </>
           }
           ai
-          explain="Hours of operations work for a mission with Settle In, compared with organising the same housing manually (business plan v11)."
+          explain="Hours of operations work for a mission with Settle In, compared with organising the same housing manually (business plan, November 2026)."
           bar={K.opsHoursPerMission / K.opsHoursManual}
         />
         <Tile label="Apartments per support agent" value={`1 : ${K.apartmentsPerAgent}`} sub="AI first line + one agent" ai explain="Each support agent covers 150 occupied apartments; the AI assistant answers and triages first." />
         <Tile
-          label="Occupancy vs break-even"
+          label="Occupancy vs Madrid break-even"
           value={`${occupied} / ${be}`}
           sub={
             <>
-              occupied apartments needed to break even
+              occupied apartments to break even in Madrid alone; {K.breakEvenApartmentsFiveCities} with five cities (year 4)
             </>
           }
-          explain={`Apartments occupied in approved missions in this demo, against the ${be} occupied apartments needed to break even.`}
+          explain={`Apartments occupied in approved missions in this demo, against the ${be} occupied apartments needed to break even with Madrid alone. Each new pair of cities adds costs, so the target is ${K.breakEvenApartmentsFiveCities} with the five cities open.`}
           bar={occupied / be}
         />
       </div>

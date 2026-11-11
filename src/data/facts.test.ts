@@ -48,6 +48,10 @@ describe('SETTLE_IN_FACTS.md ↔ facts.ts', () => {
     expect(Math.round((1 - FACTS.kpi.opsHoursPerMission / FACTS.kpi.opsHoursManual) * 100)).toBe(79);
     expect(num('kpi.apartmentsPerAgent')).toBe(FACTS.kpi.apartmentsPerAgent);
     expect(num('kpi.breakEvenApartments')).toBe(FACTS.kpi.breakEvenApartments);
+    expect(num('kpi.breakEvenApartmentsFiveCities')).toBe(FACTS.kpi.breakEvenApartmentsFiveCities);
+    expect(rows['rollout']).toBe(FACTS.cities.map((c) => `${c}: ${FACTS.rollout[c]}`).join('; '));
+    expect(rows['launchOffer']).toBe(FACTS.launchOffer);
+    expect(FACTS.demo.revenue - FACTS.demo.directCost).toBe(20437);
     expect(rows['vat']).toBe(FACTS.vatNote);
     expect(md).not.toMatch(/\| CONFIRM \|/);
     expect(num('lease.tenantExitAfterMonths')).toBe(FACTS.lease.tenantExitAfterMonths);

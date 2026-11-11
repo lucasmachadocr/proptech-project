@@ -2,7 +2,7 @@
 
 Clickable, 100% static MVP of a B2B managed marketplace that houses project teams (engineers, 1–12
 months) in verified furnished apartments in Madrid, Barcelona, Valencia, Málaga and Zaragoza.
-Source of truth: business plan v11 (investor version) → **SETTLE_IN_FACTS.md**.
+Source of truth: business plan (November 2026 version) and the financial model → **SETTLE_IN_FACTS.md**.
 This file mirrors CLAUDE.md. Keep both in sync when you change the rules.
 
 ## Rules
