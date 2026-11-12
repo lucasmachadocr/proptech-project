@@ -16,6 +16,8 @@ import LedgerPage from './pages/ops/LedgerPage';
 import KpiPage from './pages/ops/KpiPage';
 import RisksPage from './pages/ops/RisksPage';
 import AboutTechPage from './pages/about/AboutTechPage';
+import SharePage from './pages/share/SharePage';
+import SummaryPage from './pages/client/SummaryPage';
 
 export default function App() {
   return (
@@ -41,6 +43,8 @@ export default function App() {
           <Route path="ops/kpis" element={<KpiPage />} />
           <Route path="ops/risks" element={<RisksPage />} />
           <Route path="about-tech" element={<AboutTechPage />} />
+          <Route path="share" element={<SharePage />} />
+          <Route path="client/summary" element={<SummaryPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

@@ -1,11 +1,13 @@
-// The scripted 3-minute investor demo: Brief → Plan → Approve → Re-plan → Invoice.
+// The scripted 3-minute investor demo: Brief → Plan → Approve → Re-plan → Invoice → Summary.
 // Each step prepares whatever it needs (so steps can run in any order) and returns the route to open.
 import { DEMO_BRIEF } from '../data/brief';
+import { FACTS } from '../data/facts';
+import { eur } from '../lib/format';
 import { ensureDemoPlan, useStore } from '../store';
 
 export interface DemoStep {
   n: number;
-  key: 'brief' | 'plan' | 'approve' | 'replan' | 'invoice';
+  key: 'brief' | 'plan' | 'approve' | 'replan' | 'invoice' | 'summary';
   title: string;
   say: string;
   run: () => string;
@@ -33,7 +35,7 @@ export const DEMO_STEPS: DemoStep[] = [
     n: 2,
     key: 'plan',
     title: 'Plan',
-    say: 'Our AI matches all 20 people to verified apartments near the site in seconds. Before the client sees it, our ops team reviews the plan — target under 48 hours from brief to plan.',
+    say: 'Our AI matches all 20 people to verified apartments near the site in seconds. Before the client sees it, our ops team reviews the plan.',
     run: () => {
       const s = useStore.getState();
       if (!s.plan) {
@@ -76,6 +78,18 @@ export const DEMO_STEPS: DemoStep[] = [
       const s = useStore.getState();
       if (!s.approvedAt) s.approvePlan();
       return '/client/invoice';
+    },
+  },
+  {
+    n: 6,
+    key: 'summary',
+    title: 'Summary',
+    say: `The whole mission in three numbers: ${eur(FACTS.demo.revenue)} of revenue for Settle In, ${FACTS.kpi.opsHoursPerMission} hours of operations work instead of ${FACTS.kpi.opsHoursManual} by hand, and one invoice for the company instead of ${FACTS.demo.people} landlords.`,
+    run: () => {
+      ensureReleased();
+      const s = useStore.getState();
+      if (!s.approvedAt) s.approvePlan();
+      return '/client/summary';
     },
   },
 ];
