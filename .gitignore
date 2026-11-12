@@ -10,3 +10,7 @@ playwright/.cache
 *.tsbuildinfo
 netlify-deploy
 .claude/
+
+# Commercial recordings (npm run commercial:shots / npm run commercial)
+docs/commercial/*.webm
+docs/commercial/*.mp4
