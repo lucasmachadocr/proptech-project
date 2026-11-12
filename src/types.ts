@@ -2,7 +2,8 @@ export type ISODate = string; // YYYY-MM-DD
 
 export type UnitType = 'studio' | '1bed' | '2bed' | '3bed';
 export type Role = 'engineer' | 'technician' | 'manager' | 'expat';
-export type VerificationStatus = 'verified' | 'pending' | 'rejected';
+// 'public' = a real listing from a public site, not yet checked by Settle In (live mode).
+export type VerificationStatus = 'verified' | 'pending' | 'rejected' | 'public';
 
 export interface Site {
   id: string;
@@ -57,6 +58,11 @@ export interface Unit {
   listingCif: string; // CIF declared on the listing
   registrationNo?: string; // regional rental registration, where the region requires it
   status: VerificationStatus;
+  /** Live mode: where the listing was found and its public page. */
+  source?: string;
+  sourceUrl?: string;
+  /** Live mode: the location is the neighbourhood centre, not the exact address. */
+  approxLocation?: boolean;
 }
 
 export interface Household {
@@ -95,6 +101,9 @@ export interface Brief {
   budgetCaps: Record<Role, number>;
   minUnitType: Record<Role, UnitType>; // company housing policy per role
   employees: Employee[];
+  /** Live mode: the client's own company and project site (otherwise companyId / siteId). */
+  companyName?: string;
+  site?: Site;
 }
 
 export interface Assignment {

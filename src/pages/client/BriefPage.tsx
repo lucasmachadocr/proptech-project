@@ -5,7 +5,7 @@ import { AiBadge, inputCls, labelCls } from '../../components/ui';
 import { MODEL_LABEL, SAMPLE_REQUEST, readBrief, type BriefReading, type FieldKey } from '../../ai/briefReader';
 import { DEMO_EMPLOYEES } from '../../data/brief';
 import { COMPANIES } from '../../data/companies';
-import { siteById, siteForCity } from '../../data/sites';
+import { siteForCity, briefSite } from '../../data/sites';
 import { eur, pct } from '../../lib/format';
 import { formatDate, stayEnd } from '../../lib/dates';
 import { useStore } from '../../store';
@@ -45,7 +45,7 @@ export default function BriefPage() {
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const company = COMPANIES.find((c) => c.id === draft.companyId)!;
-  const city = siteById(draft.siteId).city;
+  const city = briefSite(draft).city;
   const update = <K extends keyof Brief>(k: K, v: Brief[K]) => setDraft((d) => ({ ...d, [k]: v }));
 
   const [request, setRequest] = useState('');
@@ -170,7 +170,7 @@ export default function BriefPage() {
 
         <dl className="mt-6 grid grid-cols-2 gap-4" data-testid="brief-summary">
           <Fact label="Who" missing={isMissing('people')} value={`${draft.employees.length} engineers`} />
-          <Fact label="Where" missing={isMissing('city')} value={siteById(draft.siteId).town} />
+          <Fact label="Where" missing={isMissing('city')} value={briefSite(draft).town} />
           <Fact label="How long" missing={isMissing('months', 'start')} value={`${draft.months} months`} sub={`${formatDate(draft.start)} → ${formatDate(stayEnd(draft.start, draft.months))}`} />
           <Fact label="Budget" missing={isMissing('budget', 'maxCommuteMin')} value={`≤ ${eur(draft.budgetCaps.engineer)}/mo`} sub={`per apartment · ≤ ${draft.maxCommuteMin} min commute`} />
         </dl>

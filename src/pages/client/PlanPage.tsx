@@ -5,7 +5,7 @@ import CityMap from '../../components/CityMap';
 import { AiBadge, Badge, Explain, Kpi, LinkButton } from '../../components/ui';
 import { FACTS } from '../../data/facts';
 import { providerById } from '../../data/providers';
-import { siteById } from '../../data/sites';
+import { briefSite } from '../../data/sites';
 import { UNIT_TYPE_SHORT } from '../../data/units';
 import { startStep } from '../../demo/steps';
 import { eur, pct } from '../../lib/format';
@@ -36,7 +36,7 @@ export default function PlanPage() {
     );
   }
 
-  const site = siteById(brief.siteId);
+  const site = briefSite(brief);
   const m = plan.metrics;
   const inv = companyInvoice(m.monthlyRent, m.apartments, flex);
   const missionTotal = companyInvoice(m.totalRent, m.apartments, flex).total;

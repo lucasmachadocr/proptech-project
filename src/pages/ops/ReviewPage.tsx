@@ -6,7 +6,7 @@ import CityMap from '../../components/CityMap';
 import { AiBadge, Badge, Explain, LinkButton, cx } from '../../components/ui';
 import { companyById } from '../../data/companies';
 import { FACTS } from '../../data/facts';
-import { siteById } from '../../data/sites';
+import { briefSite } from '../../data/sites';
 import { stayEnd } from '../../lib/dates';
 import { eur } from '../../lib/format';
 import { companyInvoice } from '../../lib/money';
@@ -36,7 +36,7 @@ export default function ReviewPage() {
     );
   }
 
-  const site = siteById(brief.siteId);
+  const site = briefSite(brief);
   const company = companyById(brief.companyId);
   const end = stayEnd(brief.start, brief.months);
   const shown = options![preview];

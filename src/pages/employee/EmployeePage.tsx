@@ -8,7 +8,7 @@ import PhotoThumb from '../../components/PhotoThumb';
 import { AiBadge, Badge, Button, LinkButton, cx } from '../../components/ui';
 import { companyById } from '../../data/companies';
 import { providerById } from '../../data/providers';
-import { siteById } from '../../data/sites';
+import { briefSite } from '../../data/sites';
 import { UNIT_TYPE_SHORT } from '../../data/units';
 import { formatDate, stayEnd } from '../../lib/dates';
 import { useStore } from '../../store';
@@ -49,7 +49,7 @@ export default function EmployeePage() {
   const emp = brief.employees.find((e) => e.id === employeeId) ?? brief.employees[0];
   const a = plan.assignments.find((x) => x.employeeId === emp.id);
   const unit = a && units.find((u) => u.id === a.unitId);
-  const site = siteById(brief.siteId);
+  const site = briefSite(brief);
   const company = companyById(brief.companyId);
   const first = emp.name.split(' ')[0];
   let seq = 100 + extra.length;

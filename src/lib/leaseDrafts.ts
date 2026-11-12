@@ -1,14 +1,14 @@
 import { draftCauseClause } from '../ai/lease';
 import type { LeaseDraft } from '../ai/compliance';
 import { companyById } from '../data/companies';
-import { siteById } from '../data/sites';
+import { briefSite } from '../data/sites';
 import { stayEnd } from './dates';
 import type { Assignment, Brief } from '../types';
 
 /** Default lease for an assignment: cause pre-filled, assignment letter attached. */
 export function draftForAssignment(brief: Brief, a: Assignment): LeaseDraft {
   const company = companyById(brief.companyId);
-  const site = siteById(brief.siteId);
+  const site = briefSite(brief);
   const occupant = brief.employees.find((e) => e.id === a.employeeId)!;
   return {
     unitId: a.unitId,

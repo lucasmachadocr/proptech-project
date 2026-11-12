@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MapView, { type MapUnit } from '../../components/MapView';
 import { AiBadge, Badge, Kpi, LinkButton, inputCls, labelCls } from '../../components/ui';
-import { siteById } from '../../data/sites';
+import { briefSite } from '../../data/sites';
 import { UNIT_TYPE_SHORT } from '../../data/units';
 import { startStep } from '../../demo/steps';
 import { formatDate, stayEnd } from '../../lib/dates';
@@ -16,7 +16,7 @@ export default function ChangePage() {
   const { brief, plan, approvedAt, change, units, proposeChange, applyChange, flex, demoStep } = useStore();
   const [add, setAdd] = useState(3);
   const [fromMonth, setFromMonth] = useState(3);
-  const site = siteById(brief.siteId);
+  const site = briefSite(brief);
 
   const mapUnits = useMemo<MapUnit[]>(() => {
     if (!change) return [];
