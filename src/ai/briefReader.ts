@@ -65,8 +65,9 @@ const WORDS: Record<string, number> = {
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14,
   fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90, hundred: 100,
 };
-const NUM_WORD = Object.keys(WORDS).join('|');
-const NUM = `(?:\\d[\\d.,]*|(?:${NUM_WORD})(?:[- ](?:${NUM_WORD}))?)`;
+// Longest words first, so "seventeen" is not read as "seven".
+const NUM_WORD = Object.keys(WORDS).sort((a, b) => b.length - a.length).join('|');
+const NUM = `(?:\\d[\\d.,]*|\\b(?:${NUM_WORD})(?:[- ](?:${NUM_WORD}))?\\b)`;
 const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
 const MONTH_RE = MONTHS.map((m) => `${m}|${m.slice(0, 3)}`).join('|');
 
@@ -74,8 +75,13 @@ const strip = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerC
 
 /** "twenty", "twenty-three", "20", "2,200", "2.200", "2k" → number. */
 export function toNumber(raw: string): number | null {
-  const s = raw.trim().toLowerCase();
-  const k = s.match(/^(\d+(?:[.,]\d+)?)\s*k\b/);
+  // The model's tokenizer adds spaces: "Twenty - five", "2. 5k". Join them back first.
+  const s = raw
+    .trim()
+    .toLowerCase()
+    .replace(/\s*-\s*/g, '-')
+    .replace(/(\d)([.,])\s+(\d)/g, '$1$2$3');
+  const k = s.match(/(\d+(?:[.,]\d+)?)\s*k\b/);
   if (k) return Math.round(Number(k[1].replace(',', '.')) * 1000);
   const d = s.match(/\d[\d.,]*/);
   if (d) {
@@ -85,7 +91,7 @@ export function toNumber(raw: string): number | null {
     const n = Number(t);
     return Number.isFinite(n) ? n : null;
   }
-  const w = s.match(new RegExp(`(${NUM_WORD})(?:[- ](${NUM_WORD}))?`));
+  const w = s.match(new RegExp(`\\b(${NUM_WORD})(?:[- ](${NUM_WORD}))?\\b`));
   if (!w) return null;
   const a = WORDS[w[1]];
   const b = w[2] ? WORDS[w[2]] : 0;
@@ -146,6 +152,8 @@ export function toCity(raw: string): string | null {
 export function toMinutes(raw: string): number | null {
   const s = raw.toLowerCase();
   if (/half an hour/.test(s)) return 30;
+  // A commute needs a time unit: "10 weeks", "6 months" or "18 workers" are not commutes.
+  if (!/\b(min|mins|minutes?|hours?|hr|hrs|h)\b/.test(s)) return null;
   const n = toNumber(s);
   if (n === null) return null;
   const min = /hour/.test(s) && !/min/.test(s) ? n * 60 : n;
@@ -167,16 +175,25 @@ const NORMALISE: Record<FieldKey, (raw: string) => number | string | null> = {
 };
 
 // ── Engine 2: rules ───────────────────────────────────────────────────────
+const PEOPLE_NOUNS = 'engineers?|technicians?|people|persons|employees|staff|workers|colleagues|specialists?|managers?|consultants?|auditors?|analysts?|developers?|experts?|inspectors?|operators?';
+const DATE = `(?:\\d{1,2}(?:st|nd|rd|th)?(?: of)? (?:${MONTH_RE})\\w*|(?:${MONTH_RE})\\w* \\d{1,2}(?:st|nd|rd|th)?)(?:,? 20\\d{2})?|20\\d{2}-\\d{2}-\\d{2}|\\d{1,2}[/.]\\d{1,2}[/.]20\\d{2}`;
 const RULES: Record<FieldKey, RegExp[]> = {
-  people: [new RegExp(`(${NUM})\\s+(?:[a-z-]+\\s+){0,3}(?:engineers?|technicians?|people|employees|staff|workers|colleagues|specialists?)`, 'i'), new RegExp(`team of (${NUM})`, 'i')],
-  city: [/[^.]*\b(?:in|at|near|to)\b[^.]*/i],
-  start: [
-    new RegExp(`(?:from|starting|start(?:s|ing)? on|as of|arriv\\w+ on)\\s+(?:the\\s+)?((?:\\d{1,2}(?:st|nd|rd|th)?(?: of)? (?:${MONTH_RE})\\w*|(?:${MONTH_RE})\\w* \\d{1,2}(?:st|nd|rd|th)?)(?:,? 20\\d{2})?|20\\d{2}-\\d{2}-\\d{2}|\\d{1,2}[/.]\\d{1,2}[/.]20\\d{2})`, 'i'),
-    new RegExp(`((?:\\d{1,2}(?:st|nd|rd|th)?(?: of)? (?:${MONTH_RE})\\w*|(?:${MONTH_RE})\\w* \\d{1,2}(?:st|nd|rd|th)?)(?:,? 20\\d{2})?|20\\d{2}-\\d{2}-\\d{2})`, 'i'),
+  people: [
+    new RegExp(`(${NUM})\\s+(?:[a-z-]+\\s+){0,3}(?:${PEOPLE_NOUNS})\\b`, 'gi'),
+    new RegExp(`(?:team|crew|group) of (${NUM})`, 'gi'),
+    // Policy is one apartment per person, so "10 apartments" also gives the head-count.
+    new RegExp(`(${NUM})\\s+(?:furnished\\s+)?(?:apartments|flats|units)\\b`, 'gi'),
   ],
-  months: [new RegExp(`for\\s+(?:about\\s+|around\\s+)?(half a year|a year|${NUM}\\s+(?:months?|weeks?|years?))`, 'i'), new RegExp(`(${NUM}[- ](?:months?|weeks?))`, 'i')],
-  maxCommuteMin: [new RegExp(`(half an hour|${NUM}\\s*(?:minutes?|mins?|min\\b|hours?))`, 'i')],
-  budget: [new RegExp(`(?:budget|cap|up to|maximum|max\\.?)[^.€\\d]*(€\\s*${NUM}k?|${NUM}k?\\s*(?:€|eur\\w*))`, 'i'), new RegExp(`(€\\s*${NUM}k?|${NUM}k?\\s*(?:€|euros?))`, 'i')],
+  city: [/[^.]*\b(?:in|at|near|to)\b[^.]*/i],
+  start: [new RegExp(`(?:from|starting|start(?:s|ing)? on|as of|arriv\\w+ on|on)\\s+(?:the\\s+)?(${DATE})`, 'gi'), new RegExp(`(${DATE})`, 'gi')],
+  months: [new RegExp(`for\\s+(?:about\\s+|around\\s+)?(half a year|a year|${NUM}\\s+(?:months?|weeks?|years?))`, 'gi'), new RegExp(`(${NUM}[- ](?:months?|weeks?))`, 'gi')],
+  maxCommuteMin: [new RegExp(`(half an hour|${NUM}\\s*(?:minutes?|mins?|min\\b|hours?))`, 'gi')],
+  budget: [
+    new RegExp(`(?:budget|cap|up to|maximum|max\\.?)[^.€\\d]*(€\\s*${NUM}k?|${NUM}k?\\s*(?:€|eur\\w*))`, 'gi'),
+    new RegExp(`(€\\s*${NUM}k?|${NUM}k?\\s*(?:€|euros?))`, 'gi'),
+    // "budget 2100": a number right after the word budget, without a currency sign.
+    new RegExp(`budget\\D{0,20}?(${NUM}k?)`, 'gi'),
+  ],
 };
 
 function ruleField(key: FieldKey, text: string): FieldReading {
@@ -188,10 +205,23 @@ function ruleField(key: FieldKey, text: string): FieldReading {
     return { ...base, value, evidence: hit, score: 1 };
   }
   for (const re of RULES[key]) {
-    const m = text.match(re);
-    const raw = m?.[1] ?? '';
-    const value = raw ? NORMALISE[key](raw) : null;
-    if (value !== null) return { ...base, value, evidence: raw.trim(), score: 1 };
+    // Try every match in order: the first one that gives a valid value wins.
+    const all = re.global ? [...text.matchAll(re)] : [text.match(re)];
+    for (const m of all) {
+      const raw = m?.[1] ?? '';
+      const value = raw ? NORMALISE[key](raw) : null;
+      if (value !== null) return { ...base, value, evidence: raw.trim(), score: 1 };
+    }
+  }
+  if (key === 'months') {
+    // "from 5 Jan 2027 till 5 July 2027": the length is the gap between the two dates.
+    const range = text.match(new RegExp(`(${DATE})\\s*(?:to|till|until|through|-|–)\\s*(${DATE})`, 'i'));
+    const a = range && toIsoDate(range[1]);
+    const b = range && toIsoDate(range[2]);
+    if (a && b) {
+      const m = Math.round((Date.parse(b) - Date.parse(a)) / (30.44 * 864e5));
+      if (m >= 2 && m <= 12) return { ...base, value: m, evidence: range![0].trim(), score: 1 };
+    }
   }
   return { ...base, value: null, evidence: '', score: 0 };
 }
@@ -209,10 +239,17 @@ export async function readBriefWithModel(text: string, qa: QaFn): Promise<BriefR
   for (const key of KEYS) {
     const { answer, score } = await qa(QUESTIONS[key].question, text);
     // For the city the model points at the place; the sentence around it may name the city itself.
-    const value = score >= MIN_SCORE ? (NORMALISE[key](answer) ?? (key === 'city' ? toCity(sentenceOf(text, answer)) : null)) : null;
+    let value = score >= MIN_SCORE ? (NORMALISE[key](answer) ?? (key === 'city' ? toCity(sentenceOf(text, answer)) : null)) : null;
+    // "from 5 Jan till 5 July": a date that follows "till/until/to" is the end of the stay, not its start.
+    if (key === 'start' && value !== null && endsARange(text, answer)) value = null;
     fields.push(value !== null ? { key, label: QUESTIONS[key].label, value, evidence: answer.trim(), score, by: 'model' } : ruleField(key, text));
   }
   return { engine: 'model', fields, ms: Date.now() - t0 };
+}
+
+function endsARange(text: string, span: string) {
+  const i = text.indexOf(span.trim());
+  return i > 0 && /(?:till|until|to|through|-|–)\s*$/i.test(text.slice(Math.max(0, i - 10), i));
 }
 
 function sentenceOf(text: string, span: string) {
@@ -230,7 +267,10 @@ let cached: Promise<QaFn> | null = null;
 /** Downloads the model once (the browser caches it) and returns the question-answering function. */
 export function loadBriefModel(onProgress?: (p: LoadProgress) => void): Promise<QaFn> {
   cached ??= (async () => {
-    const { pipeline } = await import('@huggingface/transformers');
+    const { pipeline, env } = await import('@huggingface/transformers');
+    // Keep the weights in the browser's Cache Storage: the next visit loads them from disk, offline too.
+    env.useBrowserCache = true;
+    env.allowLocalModels = false;
     const qa = await pipeline('question-answering', MODEL_ID, {
       dtype: 'q8',
       progress_callback: (e: { status?: string; file?: string; progress?: number }) => {
