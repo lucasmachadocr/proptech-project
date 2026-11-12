@@ -30,19 +30,19 @@ export default function KpiPage() {
             </>
           }
           ai
-          explain="Hours of operations work for a mission with Settle In, compared with organising the same housing manually (business plan, November 2026)."
+          explain={`Hours of operations work for the reference mission (20 people, 6 months): ${K.opsHoursAtLaunch} h at launch, ${K.opsHoursPerMission} h from month 12, against ${K.opsHoursManual} h when the same housing is organised by hand (financial model).`}
           bar={K.opsHoursPerMission / K.opsHoursManual}
         />
         <Tile label="Apartments per support agent" value={`1 : ${K.apartmentsPerAgent}`} sub="AI first line + one agent" ai explain="Each support agent covers 150 occupied apartments; the AI assistant answers and triages first." />
         <Tile
-          label="Occupancy vs Madrid break-even"
+          label="Occupancy vs break-even"
           value={`${occupied} / ${be}`}
           sub={
             <>
-              occupied apartments to break even in Madrid alone; {K.breakEvenApartmentsFiveCities} with five cities (year 4)
+              occupied apartments needed at year-1 economics; reached in year 3 ({K.occupiedApartmentsYear3} occupied vs {K.breakEvenApartmentsYear3} needed)
             </>
           }
-          explain={`Apartments occupied in approved missions in this demo, against the ${be} occupied apartments needed to break even with Madrid alone. Each new pair of cities adds costs, so the target is ${K.breakEvenApartmentsFiveCities} with the five cities open.`}
+          explain={`Apartments occupied in approved missions in this demo, against the ${be} occupied apartments that would cover fixed costs at year-1 economics (Madrid only, most missions at the 0% launch markup). In year 3 the plan has ${K.occupiedApartmentsYear3} apartments occupied on average and needs ${K.breakEvenApartmentsYear3}: the first year with positive EBITDA (financial model).`}
           bar={occupied / be}
         />
       </div>

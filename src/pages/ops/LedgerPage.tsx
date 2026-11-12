@@ -52,7 +52,7 @@ export default function LedgerPage() {
 
       <section className="grid gap-3 sm:grid-cols-3">
         <Stat label="Revenue" value={eur(s.revenue)} explain="Settle In net revenue for this mission." />
-        <Stat label="Direct cost" value={eur(cost)} explain={`About €${FACTS.demo.directCostPerApartmentMonth.toFixed(2)} per apartment-month × ${m.apartmentMonths} apartment-months (verification, check-in, support, payments).`} />
+        <Stat label="Direct cost" value={eur(cost)} explain={`About €${FACTS.demo.directCostPerApartmentMonth.toFixed(2)} per apartment-month × ${m.apartmentMonths} apartment-months (support, verification, check-in, e-signature, AI and platform, payments, credit insurance; financial model).`} />
         <Stat label="Contribution" value={eur(s.revenue - cost)} explain="Revenue minus direct cost, before fixed costs." />
       </section>
 

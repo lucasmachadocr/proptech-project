@@ -4,6 +4,7 @@ import { APP_NAME, APP_TAGLINE } from '../config';
 import { FACTS } from '../data/facts';
 import { useStore } from '../store';
 import DemoBar from './DemoBar';
+import AiStatus from './AiStatus';
 import { Logo } from './Logo';
 import { cx } from './ui';
 
@@ -23,6 +24,7 @@ const SUBNAV: Record<RoleKey, { to: string; label: string }[]> = {
     { to: '/client/plan', label: 'Plan' },
     { to: '/client/change', label: 'Re-plan' },
     { to: '/client/invoice', label: 'Invoice' },
+    { to: '/client/summary', label: 'Summary' },
   ],
   provider: [],
   employee: [],
@@ -78,8 +80,12 @@ export default function Layout() {
           </nav>
 
           <div className="ml-auto flex items-center gap-2 text-sm">
-            <button type="button" onClick={resetDemo} className="rounded-full px-3 py-1.5 font-medium text-stone-600 ring-1 ring-stone-300 hover:text-ink hover:ring-ink" data-testid="reset-demo">
-              ↺ Reset demo
+            <AiStatus />
+            <NavLink to="/share" className="rounded-full px-3 py-1.5 font-medium text-stone-600 ring-1 ring-stone-300 hover:text-ink hover:ring-ink" data-testid="share-link">
+              Share
+            </NavLink>
+            <button type="button" onClick={resetDemo} className="rounded-full bg-ink px-3 py-1.5 font-medium whitespace-nowrap text-white hover:bg-stone-700" data-testid="reset-demo" title="Clear every change and go back to the start">
+              ↺ Start over
             </button>
           </div>
         </div>

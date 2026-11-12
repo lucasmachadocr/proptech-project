@@ -6,7 +6,7 @@ export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Bool
 export function AiBadge({ label = 'AI', title }: { label?: string; title?: string }) {
   return (
     <span
-      title={title ?? 'Produced by the local, explainable AI engine (phase 1: optimisation + rules)'}
+      title={title ?? 'Produced by the local, explainable AI engine (optimisation and rules; the brief reader is a language model)'}
       className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-brand-800 ring-1 ring-brand-200 ring-inset"
     >
       <svg aria-hidden viewBox="0 0 16 16" className="h-3 w-3 fill-current">

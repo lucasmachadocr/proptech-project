@@ -6,7 +6,7 @@ async function home(page: Page) {
   await expect(page.getByTestId('start-demo')).toBeVisible();
 }
 
-test('guided demo: Brief → Plan → Approve → Re-plan → Invoice in under 3 minutes', async ({ page }) => {
+test('guided demo: Brief → Plan → Approve → Re-plan → Invoice → Summary in under 3 minutes', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   const t0 = Date.now();
@@ -54,6 +54,14 @@ test('guided demo: Brief → Plan → Approve → Re-plan → Invoice in under 3
     await expect(page.getByTestId('invoice-total')).toHaveText('€239,034');
     await expect(page.getByTestId('line-markup')).toContainText('4%');
     await expect(page.getByTestId('line-flex')).toContainText('2%');
+    await page.getByTestId('demo-next').click();
+  });
+
+  await test.step('6 · Mission summary', async () => {
+    await expect(page.getByTestId('summary-revenue')).toContainText('€24,805');
+    await expect(page.getByTestId('summary-ops')).toContainText('39 h');
+    await expect(page.getByTestId('summary-ops')).toContainText('182 h');
+    await expect(page.getByTestId('summary-invoices')).toContainText('1');
     await page.getByTestId('demo-finish').click();
     await expect(page.getByTestId('start-demo')).toBeVisible();
   });
@@ -93,4 +101,49 @@ test('employee WhatsApp chat triages an urgent issue with a 2 h SLA', async ({ p
   await page.getByTestId('report-issue').click();
   await expect(page.getByTestId('triage-result')).toContainText('URGENT');
   await expect(page.getByTestId('triage-result')).toContainText('SLA 2 h');
+});
+
+test('brief reader fills the brief from a pasted request (language model, or rule parser when offline)', async ({ page }) => {
+  test.setTimeout(240_000);
+  await home(page);
+  await page.getByTestId('start-demo').click();
+  await page.getByTestId('brief-sample').click();
+  await page.getByTestId('brief-read').click();
+  const reading = page.getByTestId('brief-reading');
+  await expect(reading).toBeVisible({ timeout: 200_000 });
+  await expect(reading).toContainText('6 months');
+  await expect(reading).toContainText('€2,200/mo');
+  await expect(page.getByTestId('brief-summary')).toContainText('20 engineers');
+});
+
+test('start over clears the demo; share page shows a QR code and the short address', async ({ page }) => {
+  await home(page);
+  await page.getByTestId('start-demo').click();
+  await page.getByTestId('demo-next').click();
+  await expect(page.getByTestId('review-queue')).toBeVisible();
+  await page.getByTestId('reset-demo').click();
+  await expect(page.getByTestId('start-demo')).toBeVisible();
+  await page.goto('#/ops/review');
+  await expect(page.getByText('No plans waiting for review')).toBeVisible();
+
+  await page.getByTestId('share-link').click();
+  await expect(page.getByTestId('share-qr')).toBeVisible();
+  await expect(page.getByTestId('share-url')).not.toContainText('http');
+});
+
+test('brief reader: a request that leaves things out shows them as missing and blocks the plan until filled', async ({ page }) => {
+  test.setTimeout(240_000);
+  await home(page);
+  await page.getByTestId('start-demo').click();
+  await page.getByTestId('brief-request').fill('Lisbon project, 20 engineers, 6 months.');
+  await page.getByTestId('brief-read').click();
+  await expect(page.getByTestId('brief-reading')).toBeVisible({ timeout: 200_000 });
+  await expect(page.locator('[data-source="missing"]').first()).toBeVisible();
+  await expect(page.getByTestId('brief-summary')).toContainText('Missing — please fill');
+  await expect(page.getByTestId('generate-plan')).toBeDisabled();
+  await page.getByTestId('brief-edit').getByRole('radio', { name: /Madrid/ }).click();
+  await page.getByTestId('edit-start').fill('2027-01-11');
+  await page.getByTestId('edit-commute').fill('30');
+  await page.getByTestId('edit-budget').fill('2100');
+  await expect(page.getByTestId('generate-plan')).toBeEnabled();
 });

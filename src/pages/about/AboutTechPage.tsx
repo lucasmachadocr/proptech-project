@@ -10,6 +10,7 @@ interface Tool {
 const BUILT_WITH: Tool[] = [
   { name: 'Claude Code (Anthropic)', use: 'AI coding assistant used to write this MVP', cost: 'Paid', note: 'Used under a paid Claude subscription. Team reviewed the plan, data and outputs.' },
   { name: 'Claude (Anthropic)', use: 'Research, document review and drafting of the business plan', cost: 'Paid', note: 'Paid Claude subscription' },
+  { name: 'transformers.js + DistilBERT (SQuAD)', use: 'Language model that reads the housing request (brief reader). Runs in the browser', cost: 'Free', note: 'Open source (Apache-2.0). Model downloaded from Hugging Face on first use, about 65 MB' },
   { name: 'Vite', use: 'Build tool and dev server', cost: 'Free', note: 'Open source (MIT)' },
   { name: 'React + React DOM', use: 'User interface', cost: 'Free', note: 'Open source (MIT)' },
   { name: 'TypeScript', use: 'Typed JavaScript', cost: 'Free', note: 'Open source (Apache-2.0)' },
@@ -25,8 +26,49 @@ const BUILT_WITH: Tool[] = [
   { name: 'Netlify', use: 'Public website (settle-in-app.netlify.app)', cost: 'Free', note: 'Free plan' },
 ];
 
+interface AiModule {
+  name: string;
+  kind: 'Language model' | 'Optimiser' | 'Rules';
+  how: string;
+  next: string;
+}
+
+// One line per AI module, with the technique it really uses today. Shown on this page and in the deck.
+export const AI_MODULES: AiModule[] = [
+  {
+    name: 'Brief reader',
+    kind: 'Language model',
+    how: 'HR pastes the request as written. An open-source language model (DistilBERT, question answering) reads people, city, start date, length of stay, commute and budget, and shows the words and the confidence behind each field. A rule parser takes over if the model cannot load.',
+    next: 'a hosted LLM that also reads attached HR files and team lists.',
+  },
+  {
+    name: 'Allocation and re-plan engine',
+    kind: 'Optimiser',
+    how: 'Minimises rent + λ × commute minutes under hard rules (budget, household, availability, commute cap, one household per apartment). Greedy start, then local-search swaps. Produces the three plans and re-plans without moving people already housed.',
+    next: 'real travel times from a routing API and weights learned from past missions.',
+  },
+  {
+    name: 'Listing verification',
+    kind: 'Rules',
+    how: 'Company KYC, Catastro owner match, duplicate-photo hash, price outlier and regional registration checks, combined into a trust score.',
+    next: 'image models for photo checks and the KYC provider API.',
+  },
+  {
+    name: 'Lease compliance',
+    kind: 'Rules',
+    how: 'Encodes the seasonal-lease rules of RDL 29/2026. A red check blocks the signature.',
+    next: 'an LLM drafts the cause-of-stay clause; the rules still decide.',
+  },
+  {
+    name: 'Employee issue triage',
+    kind: 'Rules',
+    how: 'Keyword rules set category, urgency and response time on WhatsApp-style messages.',
+    next: 'an LLM assistant that answers first, in the employee’s language.',
+  },
+];
+
 const PHASE_2: Tool[] = [
-  { name: 'Claude API (Anthropic)', use: 'Plan explanations, issue triage, lease-clause drafting', cost: 'Paid', note: 'Pay per token; called only from a serverless function, never from the browser' },
+  { name: 'Claude API (Anthropic)', use: 'Reading longer briefs and HR files, plan explanations, issue triage in any language, lease-clause drafting', cost: 'Paid', note: 'Pay per token; called only from a serverless function, never from the browser' },
   { name: 'Serverless functions (e.g. Vercel / Cloudflare Workers)', use: 'Hold API keys, call the LLM', cost: 'Free tier', note: 'Free tier sufficient for a pilot' },
   { name: 'Licensed payment provider (e.g. Stripe Connect / Mangopay)', use: 'Collect rent, split payouts, KYC', cost: 'Paid', note: 'Per-transaction fees' },
   { name: 'Qualified e-signature provider', use: 'Lease signature', cost: 'Paid', note: 'Per-envelope pricing' },
@@ -47,25 +89,21 @@ export default function AboutTechPage() {
           <ToolTable title="Phase 2 · planned, not used yet" tools={PHASE_2} />
         </div>
         <div className="space-y-6">
-          <Card title="How the “AI” works in phase 1">
-            <ul className="list-disc space-y-2 pl-5 text-sm text-stone-600">
-              <li>
-                <strong className="text-stone-800">Allocation engine</strong>: minimises rent + λ × commute minutes under hard rules (budget, household, availability, commute cap, one household
-                per unit). Greedy start + local-search swaps. Deterministic and explainable.
-              </li>
-              <li>
-                <strong className="text-stone-800">Verification</strong>: rule-based document, duplicate-photo, price-outlier and address checks → trust score.
-              </li>
-              <li>
-                <strong className="text-stone-800">Compliance</strong>: encodes the seasonal-lease rules of RDL 29/2026; red blocks signature.
-              </li>
-              <li>
-                <strong className="text-stone-800">Triage</strong>: keyword rules set urgency and SLA.
-              </li>
+          <Card title="How the AI works in this MVP" id="ai">
+            <ul className="space-y-3 text-sm text-stone-600">
+              {AI_MODULES.map((m) => (
+                <li key={m.name}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <strong className="text-stone-800">{m.name}</strong>
+                    <Badge tone={m.kind === 'Language model' ? 'accent' : m.kind === 'Optimiser' ? 'blue' : 'neutral'}>{m.kind}</Badge>
+                  </div>
+                  <p className="mt-1">{m.how}</p>
+                  <p className="mt-0.5 text-xs text-stone-500">In production: {m.next}</p>
+                </li>
+              ))}
             </ul>
             <p className="mt-3 text-xs text-stone-500">
-              Everything runs in the browser: no backend, no API keys, no personal data leaves the device. The code has a clean <code>LlmClient</code> interface so phase 2 can plug Claude in
-              through a serverless function.
+              Everything runs in the browser: no backend, no API keys, no personal data leaves the device. A person approves every plan before the client sees it.
             </p>
           </Card>
           <Card title="Data">

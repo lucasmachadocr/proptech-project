@@ -10,11 +10,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "shots": "npm run build && node scripts/deck-shots.mjs"
+    "shots": "npm run build && node scripts/deck-shots.mjs",
+    "video": "npm run build && node scripts/demo-video.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "5.3.0",
+    "@huggingface/transformers": "3.8.1",
     "leaflet": "1.9.4",
+    "qrcode-generator": "2.0.4",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-leaflet": "4.2.1",
