@@ -147,3 +147,42 @@ test('brief reader: a request that leaves things out shows them as missing and b
   await page.getByTestId('edit-budget').fill('2100');
   await expect(page.getByTestId('generate-plan')).toBeEnabled();
 });
+
+test('live mode: your own mission in Madrid on real public listings', async ({ page }) => {
+  await home(page);
+  await expect(page.getByTestId('coming-next')).toContainText('Valencia');
+  await expect(page.getByTestId('coming-next')).toContainText('Year 2');
+  await page.getByTestId('start-live').click();
+
+  await test.step('Brief: company, site and team', async () => {
+    await expect(page.getByTestId('generate-plan')).toBeDisabled(); // company name first
+    await page.getByTestId('live-company').fill('Acme Data Centres');
+    await page.getByTestId('live-site').selectOption({ label: 'Valdebebas business district' });
+    await page.getByTestId('brief-edit').locator('summary').click();
+    await page.getByTestId('edit-people').fill('8');
+    await expect(page.getByTestId('brief-summary')).toContainText('8 engineers');
+    await page.getByTestId('generate-plan').click();
+  });
+
+  await test.step('Options: three plans from real flats; pick the closest', async () => {
+    await expect(page.getByRole('heading', { name: 'Three plans for your team' })).toBeVisible();
+    await expect(page.getByText(/Real public listings \(Spotahome\)/)).toBeVisible();
+    await page.getByTestId('option-C').click();
+    await page.getByTestId('release-plan').click();
+  });
+
+  await test.step('Approve and sign; every flat links to its public listing', async () => {
+    const links = page.getByTestId('listing-link');
+    await expect(links.first()).toHaveAttribute('href', /^https:\/\/www\.spotahome\.com\/madrid\/for-rent:apartments\/\d+$/);
+    await expect(page.getByTestId('approve-plan')).toBeDisabled();
+    await page.getByTestId('sign-agreement').locator('input').check();
+    await page.getByTestId('approve-plan').click();
+    await expect(page.getByText('Approved and signed')).toBeVisible();
+  });
+
+  await test.step('Invoice billed to the company', async () => {
+    await page.goto('#/client/invoice');
+    await expect(page.getByTestId('invoice')).toContainText('Acme Data Centres');
+    await expect(page.getByTestId('footer-live')).toContainText('Spotahome');
+  });
+});

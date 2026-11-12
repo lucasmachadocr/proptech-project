@@ -84,3 +84,16 @@ export const ZONE_CENTROIDS = ZONES;
 
 export const siteById = (id: string) => SITES.find((s) => s.id === id)!;
 export const siteForCity = (city: string) => SITES.find((s) => s.city === city)!;
+
+/** The client's own site when it set one (live mode), otherwise the demo site of the brief. */
+export const briefSite = (b: { siteId: string; site?: Site }): Site => b.site ?? siteById(b.siteId);
+
+// Live mode: real project areas in Madrid a client can start from (approximate centre of each area),
+// or any point the client clicks on the map.
+export const MADRID_PROJECT_SITES: Site[] = [
+  { id: 'L-SFH', city: 'Madrid', name: 'Data-centre campus · San Fernando de Henares', operator: 'Project site', town: 'San Fernando de Henares', lat: 40.4237, lng: -3.5361 },
+  { id: 'L-VDB', city: 'Madrid', name: 'Valdebebas business district', operator: 'Project site', town: 'Valdebebas', lat: 40.48, lng: -3.615 },
+  { id: 'L-MEA', city: 'Madrid', name: 'Méndez Álvaro offices', operator: 'Project site', town: 'Méndez Álvaro', lat: 40.3956, lng: -3.6786 },
+  { id: 'L-GTF', city: 'Madrid', name: 'Los Olivos industrial park · Getafe', operator: 'Project site', town: 'Getafe', lat: 40.3185, lng: -3.7064 },
+  { id: 'L-ALC', city: 'Madrid', name: 'Arroyo de la Vega business park · Alcobendas', operator: 'Project site', town: 'Alcobendas', lat: 40.537, lng: -3.6436 },
+];

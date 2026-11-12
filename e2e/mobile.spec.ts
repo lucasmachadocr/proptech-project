@@ -62,3 +62,17 @@ test('no horizontal scroll at 390 px on the demo screens', async ({ page }) => {
   await expect(page.getByTestId('share-qr')).toBeVisible();
   await noHorizontalScroll(page, 'SharePage');
 });
+
+test('no horizontal scroll at 390 px in live mode', async ({ page }) => {
+  await page.goto('./');
+  await noHorizontalScroll(page, 'Home');
+  await page.getByTestId('start-live').click();
+  await page.getByTestId('live-company').fill('Acme Data Centres');
+  await noHorizontalScroll(page, 'Live brief');
+  await page.getByTestId('generate-plan').click();
+  await expect(page.getByTestId('plan-options')).toBeVisible();
+  await noHorizontalScroll(page, 'Live options');
+  await page.getByTestId('release-plan').click();
+  await expect(page.getByTestId('listing-link').first()).toBeVisible();
+  await noHorizontalScroll(page, 'Live plan');
+});

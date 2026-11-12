@@ -28,7 +28,7 @@ export default function SummaryPage() {
           {m.apartments} engineers housed for {brief.months} months
         </h1>
         <p className="mt-2 text-lg text-stone-600">
-          {company.name} · {brief.projectName}. One brief, one plan, one invoice.
+          {brief.companyName || company.name} · {brief.projectName || 'Project team housing'}. One brief, one plan, one invoice.
         </p>
       </div>
 

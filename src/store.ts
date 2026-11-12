@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { allocate, reallocate } from './ai/allocate';
 import type { Triage } from './ai/triage';
-import { DEMO_BRIEF, EXTRA_ENGINEERS } from './data/brief';
+import { DEMO_BRIEF, EXTRA_ENGINEERS, LIVE_BRIEF, genericTeam } from './data/brief';
+import { LIVE_UNITS } from './data/liveListings';
 import { UNITS } from './data/units';
 import { addMonths } from './lib/dates';
 import type { Brief, Plan, Reallocation, Unit, VerificationStatus } from './types';
@@ -31,7 +32,13 @@ export interface ChangeRequest {
   result: Reallocation;
 }
 
+/** live = anyone plans their own mission on real public listings in Madrid; demo = the scripted investor case. */
+export type Mode = 'live' | 'demo';
+export const unitsFor = (mode: Mode) => (mode === 'live' ? LIVE_UNITS : UNITS);
+
 interface State {
+  mode: Mode;
+  setMode: (m: Mode) => void;
   brief: Brief;
   plan: Plan | null;
   reviewedAt: string | null; // released by the Ops team after plan review
@@ -47,6 +54,8 @@ interface State {
   runAllocation: () => Plan;
   approvePlan: () => void;
   releasePlan: () => void;
+  /** Live mode: the client continues with the option it picked (A, B or C). */
+  choosePlan: (p: Plan) => void;
   setFlex: (on: boolean) => void;
   proposeChange: (addEngineers: number, fromMonth?: number, extendMonths?: number) => ChangeRequest;
   applyChange: () => void;
@@ -56,14 +65,15 @@ interface State {
   reset: () => void;
 }
 
-const initial = () => ({
-  brief: DEMO_BRIEF,
+const initial = (mode: Mode = 'live') => ({
+  mode,
+  brief: mode === 'live' ? LIVE_BRIEF : DEMO_BRIEF,
   plan: null as Plan | null,
   reviewedAt: null as string | null,
   approvedAt: null as string | null,
   flex: true,
   change: null as ChangeRequest | null,
-  units: UNITS,
+  units: unitsFor(mode),
   signed: [] as SignedLease[],
   incidents: [] as Incident[],
 });
@@ -73,6 +83,10 @@ export const useStore = create<State>()(
     (set, get) => ({
       ...initial(),
       demoStep: null,
+      // Switching mode starts from a clean slate with that mode's apartments and default brief.
+      setMode: (mode) => {
+        if (get().mode !== mode) set({ ...initial(mode) });
+      },
       setBrief: (brief) => set({ brief, plan: null, reviewedAt: null, approvedAt: null, change: null, signed: [] }),
       runAllocation: () => {
         const plan = allocate(get().brief, get().units);
@@ -81,15 +95,19 @@ export const useStore = create<State>()(
       },
       approvePlan: () => set({ approvedAt: new Date().toISOString(), reviewedAt: get().reviewedAt ?? new Date().toISOString() }),
       releasePlan: () => set({ reviewedAt: new Date().toISOString() }),
+      choosePlan: (plan) => set({ plan, reviewedAt: new Date().toISOString(), approvedAt: null, change: null, signed: [] }),
       setFlex: (flex) => set({ flex }),
       proposeChange: (addEngineers, fromMonth = 1, extendMonths = 0) => {
         const { brief, plan, units } = get();
         const base = plan ?? get().runAllocation();
         const existing = new Set(brief.employees.map((e) => e.id));
         const joinDate = addMonths(brief.start, fromMonth - 1);
-        const extra = EXTRA_ENGINEERS.filter((e) => !existing.has(e.id))
-          .slice(0, addEngineers)
-          .map((e) => (fromMonth > 1 ? { ...e, start: joinDate } : e));
+        const extra =
+          get().mode === 'live'
+            ? genericTeam(addEngineers, brief.employees.length + 1, fromMonth > 1 ? joinDate : undefined)
+            : EXTRA_ENGINEERS.filter((e) => !existing.has(e.id))
+                .slice(0, addEngineers)
+                .map((e) => (fromMonth > 1 ? { ...e, start: joinDate } : e));
         const next: Brief = { ...brief, months: brief.months + extendMonths, employees: [...brief.employees, ...extra] };
         const result = reallocate(base, brief, next, units);
         const parts = [
@@ -109,14 +127,15 @@ export const useStore = create<State>()(
       signLease: (l) => set({ signed: [...get().signed.filter((s) => s.unitId !== l.unitId), l] }),
       addIncident: (i) => set({ incidents: [i, ...get().incidents] }),
       setDemoStep: (demoStep) => set({ demoStep }),
-      reset: () => set({ ...initial(), demoStep: null }),
+      reset: () => set({ ...initial('live'), demoStep: null }),
     }),
     {
-      name: 'settle-in-demo-v11',
-      version: 11,
+      name: 'settle-in-v12',
+      version: 12,
       storage: createJSONStorage(() => localStorage),
       // Persist only verification decisions, not the unit catalogue, so seed updates always apply.
       partialize: (s) => ({
+        mode: s.mode,
         brief: s.brief,
         plan: s.plan,
         reviewedAt: s.reviewedAt,
@@ -129,7 +148,8 @@ export const useStore = create<State>()(
       }),
       merge: (persisted, current) => {
         const { unitStatus, ...rest } = (persisted ?? {}) as Partial<State> & { unitStatus?: Record<string, VerificationStatus> };
-        return { ...current, ...rest, units: UNITS.map((u) => ({ ...u, status: unitStatus?.[u.id] ?? u.status })) };
+        const mode: Mode = rest.mode === 'demo' ? 'demo' : 'live';
+        return { ...current, ...rest, mode, units: unitsFor(mode).map((u) => ({ ...u, status: unitStatus?.[u.id] ?? u.status })) };
       },
     },
   ),
@@ -137,6 +157,7 @@ export const useStore = create<State>()(
 
 /** Ensure the base demo plan exists (used by /demo steps so each step works on its own). */
 export function ensureDemoPlan(): Plan {
+  useStore.getState().setMode('demo');
   const s = useStore.getState();
   const isBase = s.brief.id === DEMO_BRIEF.id && s.brief.months === DEMO_BRIEF.months && s.brief.employees.length === DEMO_BRIEF.employees.length;
   if (s.plan && isBase) return s.plan;

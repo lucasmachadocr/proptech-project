@@ -1,0 +1,78 @@
+# Public 1-bedroom listings, Spotahome Madrid search (pages 1–2), collected 12 Nov 2026.
+# id|price €/month|neighbourhood|available from|bills included
+1264773|1500|Palacio|26 DEC|no
+1745028|1800|Cuatro Caminos|12 NOV|all
+653438|2850|Trafalgar|18 MAY 27|no
+1351791|1700|Ibiza|12 JAN 27|some
+619803|1300|Berruguete|01 JAN 27|all
+1262873|2993|Nueva España|13 NOV|all
+1488214|2800|Palacio|18 JAN 27|all
+1685828|2228|Justicia|20 DEC|all
+273035|2200|Cortes|01 JAN 27|all
+1407874|1400|Trafalgar|01 JUN 27|some
+1280958|1150|Cortes|04 JAN 27|no
+1260973|2741|Nueva España|09 DEC|all
+1685791|2460|Fuente del Berro|12 NOV|all
+762566|1400|Universidad|16 DEC|all
+1746876|1750|Arapiles|12 NOV|all
+1348463|1600|Ríos Rosas|16 DEC|no
+1743367|1550|Chopera|16 NOV|all
+342338|2695|Castillejos|27 NOV|all
+1746651|1800|Argüelles|27 FEB 27|no
+1262783|2783|Nueva España|19 DEC|all
+462522|1870|Malasaña|10 DEC|all
+233696|1350|Embajadores|07 DEC|all
+1350420|1900|Universidad|30 JAN 27|no
+1748621|1500|Pueblo Nuevo|12 NOV|no
+1353002|2100|Palacio|18 DEC|all
+1436590|875|Bellas Vistas|01 JUL 27|some
+780772|1850|Casa de Campo|11 DEC|some
+1749985|1500|Cortes|09 DEC|all
+1497422|2450|Prosperidad|16 JAN 27|all
+422777|2750|Palos De Moguer|28 JAN 27|all
+576657|1349|Arapiles|16 JAN 27|some
+1497270|2450|Prosperidad|10 JAN 27|all
+1012884|1405|Bellas Vistas|20 DEC|all
+422183|3500|Palos de Moguer|15 JAN 27|all
+1696058|1900|Palacio|04 DEC|all
+956542|2195|Goya|27 NOV|all
+1074933|1500|Gaztambide|16 JAN 27|some
+1347982|1450|Imperial|31 DEC|no
+938670|1890|Castillejos|12 NOV|all
+237948|1250|Sol|16 DEC|all
+1596258|5000|Sol|25 DEC|no
+1261862|2673|Nueva España|19 DEC|all
+1297987|1800|Embajadores|04 DEC|some
+233698|1450|Embajadores|04 DEC|all
+1655029|1500|Valdeacederas|01 DEC|all
+318645|2200|Cuatro Caminos|01 FEB 27|no
+1488321|2500|San Diego|03 DEC|all
+450280|1950|Palacio|15 NOV|all
+1443552|3050|Lista|15 NOV|some
+754183|1490|Valdeacederas|12 NOV|no
+1427670|1980|Embajadores|21 DEC|all
+1436330|1330|Goya|01 JAN 27|some
+410568|2280|Palacio|29 NOV|no
+410588|2520|La Latina|30 NOV|no
+874102|2880|Argüelles|27 NOV|no
+410504|2280|La Latina|29 NOV|no
+874100|2400|Argüelles|27 NOV|no
+410491|2922|La Latina|13 DEC|no
+990964|1300|Cuatro Caminos|22 DEC|no
+277782|2000|Castilla|28 DEC|all
+1640126|1300|Universidad|21 DEC|all
+770330|1700|Cuatro Caminos|31 JAN 27|no
+478769|2150|Palos de Moguer|25 JAN 27|all
+980044|2900|Universidad|08 JAN 27|all
+1621284|1490|Embajadores|21 DEC|all
+1181299|2551|Salamanca|22 DEC|no
+1427964|1300|Cortes|31 MAY 27|some
+236923|1350|Sol|12 NOV|all
+1322699|2700|Valverde|12 NOV|no
+1583086|2071|Nueva España|26 JAN 27|no
+779246|2429|Palacio|24 JAN 27|no
+1180610|2776|Centro|21 JAN 27|no
+1535970|2331|Justicia|22 DEC|no
+653655|3217|Trafalgar|20 JAN 27|no
+930367|2200|Delicias|06 JAN 27|no
+1651700|1850|Valdefuentes|16 DEC|some

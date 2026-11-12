@@ -7,7 +7,7 @@
 //
 // Greedy start (most-constrained employee first) followed by local search
 // (move to a free unit, pairwise swap, one-step ejection for unassigned people).
-import { siteById } from '../data/sites';
+import { briefSite } from '../data/sites';
 import { formatDate, stayEnd } from '../lib/dates';
 import type {
   Assignment, Brief, DiffRow, Employee, Plan, PlanMetrics, Reallocation, Role, Tradeoff, Unit, UnitType,
@@ -57,11 +57,12 @@ export interface Feasibility {
 }
 
 export function checkUnit(emp: Employee, unit: Unit, brief: Brief): Feasibility {
-  const site = siteById(brief.siteId);
+  const site = briefSite(brief);
   const commute = commuteMin(site, unit);
   const end = stayEnd(brief.start, brief.months);
   const start = emp.start ?? brief.start;
-  if (unit.status !== 'verified') return { ok: false, fail: 'unverified', commute };
+  // Live mode plans from public listings ('public'); Settle In verifies each one before signing.
+  if (unit.status !== 'verified' && unit.status !== 'public') return { ok: false, fail: 'unverified', commute };
   if (!allowedTypes(emp, brief).includes(unit.type)) return { ok: false, fail: 'type', commute };
   if (unit.rent > brief.budgetCaps[emp.role]) return { ok: false, fail: 'budget', commute };
   if (unit.availableFrom > start || unit.availableTo < end) return { ok: false, fail: 'availability', commute };

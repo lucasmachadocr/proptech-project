@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Circle, CircleMarker, MapContainer, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import { Circle, CircleMarker, MapContainer, Polyline, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import type { LatLngBoundsExpression } from 'leaflet';
 import { AVG_SPEED_KMH, ROAD_FACTOR, commuteMin } from '../ai/geo';
 import { FACTS } from '../data/facts';
@@ -16,7 +16,7 @@ const BRAND = '#c4573d';
 const INK = '#2a2320';
 
 /** City chips with the roll-out stage: Madrid (launch city), then two cities a year. */
-export function CityChips({ city, onChange }: { city: string; onChange: (c: string) => void }) {
+export function CityChips({ city, onChange, launchOnly = false }: { city: string; onChange: (c: string) => void; launchOnly?: boolean }) {
   return (
     <div role="radiogroup" aria-label="City" className="flex flex-wrap gap-2">
       {FACTS.cities.map((c) => (
@@ -25,8 +25,9 @@ export function CityChips({ city, onChange }: { city: string; onChange: (c: stri
           type="button"
           role="radio"
           aria-checked={city === c}
+          disabled={launchOnly && c !== FACTS.cities[0]}
           onClick={() => onChange(c)}
-          className={cx('rounded-full px-4 py-1.5 text-sm font-medium transition-colors', city === c ? 'bg-ink text-white' : 'bg-white text-ink ring-1 ring-stone-300 hover:ring-ink')}
+          className={cx('rounded-full px-4 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50', city === c ? 'bg-ink text-white' : 'bg-white text-ink ring-1 ring-stone-300 hover:ring-ink')}
         >
           {c}
           <span className={cx('ml-2 text-xs font-normal', city === c ? 'text-white/70' : 'text-stone-500')}>{FACTS.rollout[c]}</span>
@@ -44,30 +45,47 @@ function FitTo({ bounds }: { bounds: LatLngBoundsExpression }) {
   return null;
 }
 
+/** Lets the client place the project site with a click (live mode). */
+function PickSite({ onPick }: { onPick: (lat: number, lng: number) => void }) {
+  useMapEvents({ click: (e) => onPick(+e.latlng.lat.toFixed(5), +e.latlng.lng.toFixed(5)) });
+  return null;
+}
+
+/** A unit the client can book: a verified demo flat, or a real public listing (live mode). */
+const bookable = (u: Unit) => u.status === 'verified' || u.status === 'public';
+
 interface Props {
   city: string;
+  /** The project site (defaults to the demo site of the city). */
+  site?: { lat: number; lng: number; town: string };
+  /** Apartments to show (defaults to the store's). */
+  units?: Unit[];
+  /** Click on the map to place the site. */
+  onPick?: (lat: number, lng: number) => void;
   /** Units chosen in the plan (highlighted, with commute lines). Empty = explore mode. */
   chosen?: Map<string, string>; // unitId → occupant name
   height?: number;
   showZones?: boolean;
 }
 
-export default function CityMap({ city, chosen, height = 420, showZones = true }: Props) {
-  const units = useStore((s) => s.units);
-  const site = siteForCity(city);
+export default function CityMap({ city, chosen, height = 420, showZones = true, site: siteProp, units: unitsProp, onPick }: Props) {
+  const storeUnits = useStore((s) => s.units);
+  const units = unitsProp ?? storeUnits;
+  const site = siteProp ?? siteForCity(city);
+  const live = units.some((u) => u.status === 'public');
   const [selected, setSelected] = useState<Unit | null>(null);
   useEffect(() => {
     setSelected(null);
   }, [city]);
 
-  const cityUnits = useMemo(() => units.filter((u) => u.city === city && u.status === 'verified'), [units, city]);
+  const cityUnits = useMemo(() => units.filter((u) => u.city === city && bookable(u)), [units, city]);
   const hasPlan = !!chosen && chosen.size > 0;
   const bounds = useMemo<LatLngBoundsExpression>(() => {
     const pts = (hasPlan ? cityUnits.filter((u) => chosen!.has(u.id)) : cityUnits).map((u) => [u.lat, u.lng] as [number, number]);
     return [[site.lat, site.lng], ...pts] as LatLngBoundsExpression;
   }, [cityUnits, chosen, hasPlan, site]);
 
-  const zones = Object.entries(ZONES).filter(([, z]) => z.city === city);
+  const zones = live ? [] : Object.entries(ZONES).filter(([, z]) => z.city === city);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white" data-testid="city-map">
@@ -75,6 +93,7 @@ export default function CityMap({ city, chosen, height = 420, showZones = true }
         <MapContainer key={city} center={[site.lat, site.lng]} zoom={12} scrollWheelZoom={false} zoomAnimation={false} className="h-full w-full">
           <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <FitTo bounds={bounds} />
+          {onPick && <PickSite onPick={onPick} />}
           {/* 15 and 30-minute commute rings (estimate) */}
           <Circle center={[site.lat, site.lng]} radius={ringKm(30) * 1000} pathOptions={{ color: BRAND, weight: 1, opacity: 0.35, fillOpacity: 0.04, dashArray: '4 6' }} />
           <Circle center={[site.lat, site.lng]} radius={ringKm(15) * 1000} pathOptions={{ color: BRAND, weight: 1, opacity: 0.5, fillOpacity: 0.06 }} />
@@ -127,7 +146,7 @@ export default function CityMap({ city, chosen, height = 420, showZones = true }
       </div>
       {selected ? (
         <div className="flex items-center gap-4 border-t border-stone-100 p-4" data-testid="unit-card">
-          <PhotoThumb hash={selected.photos[0]} size={88} />
+          {selected.photos.length > 0 && <PhotoThumb hash={selected.photos[0]} size={88} />}
           <div className="min-w-0 flex-1">
             <div className="font-semibold text-ink">
               {UNIT_TYPE_SHORT[selected.type]} · {selected.zone}
@@ -137,6 +156,7 @@ export default function CityMap({ city, chosen, height = 420, showZones = true }
               <Explain label="How is the commute estimated?">Straight-line distance × {ROAD_FACTOR} road factor at {AVG_SPEED_KMH} km/h. Phase 2 uses a routing API with traffic.</Explain>
             </div>
             <div className="mt-0.5 truncate text-xs text-stone-500">{selected.amenities.slice(0, 4).join(' · ')}</div>
+            {selected.sourceUrl && <ListingLink unit={selected} />}
           </div>
           <button type="button" onClick={() => setSelected(null)} className="rounded-lg px-2 py-1 text-sm text-stone-500 hover:bg-stone-100" aria-label="Close">
             ✕
@@ -144,9 +164,20 @@ export default function CityMap({ city, chosen, height = 420, showZones = true }
         </div>
       ) : (
         <div className="border-t border-stone-100 px-4 py-3 text-sm text-stone-600">
-          {cityUnits.length} verified apartments around {site.town}. Tap a dot to see one.
+          {live
+            ? `${cityUnits.length} real flats listed publicly in Madrid (approximate locations). ${onPick ? 'Click the map to place your project site; tap' : 'Tap'} a dot to see one.`
+            : `${cityUnits.length} verified apartments around ${site.town}. Tap a dot to see one.`}
         </div>
       )}
     </div>
+  );
+}
+
+/** Link to the public listing a live-mode flat comes from. */
+export function ListingLink({ unit }: { unit: Unit }) {
+  return (
+    <a href={unit.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 underline underline-offset-2" data-testid="listing-link">
+      View on {unit.source} ↗<span className="font-normal text-stone-500 no-underline"> · public listing, availability not confirmed</span>
+    </a>
   );
 }

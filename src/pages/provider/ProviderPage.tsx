@@ -12,7 +12,7 @@ const providerPayout = operatorPayout;
 const landlordCommission = (rent: number) => rent * FACTS.pricing.operatorCommission;
 import { useStore } from '../../store';
 
-const STATUS = { verified: { tone: 'green', label: 'Verified' }, pending: { tone: 'amber', label: 'In verification' }, rejected: { tone: 'red', label: 'Rejected' } } as const;
+const STATUS = { verified: { tone: 'green', label: 'Verified' }, pending: { tone: 'amber', label: 'In verification' }, rejected: { tone: 'red', label: 'Rejected' }, public: { tone: 'amber', label: 'Public listing' } } as const;
 
 export default function ProviderPage() {
   const { units, plan, brief } = useStore();

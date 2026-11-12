@@ -96,6 +96,7 @@ export const DEMO_STEPS: DemoStep[] = [
 
 /** Runs step n, remembers it for the stepper and returns the route to open. */
 export function startStep(n: number): string {
+  useStore.getState().setMode('demo'); // the guided demo always runs on the scripted investor case
   const route = DEMO_STEPS[n - 1].run();
   useStore.getState().setDemoStep(n);
   return route;

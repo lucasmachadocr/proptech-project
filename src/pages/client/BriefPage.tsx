@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import CityMap, { CityChips } from '../../components/CityMap';
 import { AiBadge, inputCls, labelCls } from '../../components/ui';
 import { MODEL_LABEL, SAMPLE_REQUEST, readBrief, type BriefReading, type FieldKey } from '../../ai/briefReader';
-import { DEMO_EMPLOYEES } from '../../data/brief';
+import { DEMO_EMPLOYEES, genericTeam } from '../../data/brief';
 import { COMPANIES } from '../../data/companies';
-import { siteById, siteForCity } from '../../data/sites';
+import { MADRID_PROJECT_SITES, siteForCity, briefSite } from '../../data/sites';
 import { eur, pct } from '../../lib/format';
 import { formatDate, stayEnd } from '../../lib/dates';
 import { useStore } from '../../store';
+import { FACTS } from '../../data/facts';
 import type { Brief, Employee, Role } from '../../types';
 
 const ROLES: Role[] = ['engineer', 'technician', 'manager', 'expat'];
@@ -40,12 +41,14 @@ const shown = (r: BriefReading['fields'][number]) =>
 
 export default function BriefPage() {
   const navigate = useNavigate();
-  const { brief, setBrief, runAllocation, demoStep, setDemoStep } = useStore();
+  const { brief, setBrief, runAllocation, demoStep, setDemoStep, mode } = useStore();
+  const live = mode === 'live';
+  const team = (n: number) => (live ? genericTeam(n) : teamOf(n));
   const [draft, setDraft] = useState<Brief>(brief);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const company = COMPANIES.find((c) => c.id === draft.companyId)!;
-  const city = siteById(draft.siteId).city;
+  const city = briefSite(draft).city;
   const update = <K extends keyof Brief>(k: K, v: Brief[K]) => setDraft((d) => ({ ...d, [k]: v }));
 
   const [request, setRequest] = useState('');
@@ -74,8 +77,9 @@ export default function BriefPage() {
     const v = Object.fromEntries(r.fields.map((f) => [f.key, f.value]));
     setDraft((d) => ({
       ...d,
-      employees: typeof v.people === 'number' ? teamOf(v.people) : d.employees,
-      siteId: typeof v.city === 'string' ? siteForCity(v.city as Parameters<typeof siteForCity>[0]).id : d.siteId,
+      employees: typeof v.people === 'number' ? team(v.people) : d.employees,
+      // Live mode: Madrid is the only open city, so the site the client chose stays.
+      siteId: !live && typeof v.city === 'string' ? siteForCity(v.city as Parameters<typeof siteForCity>[0]).id : d.siteId,
       start: typeof v.start === 'string' ? v.start : d.start,
       months: typeof v.months === 'number' ? v.months : d.months,
       maxCommuteMin: typeof v.maxCommuteMin === 'number' ? v.maxCommuteMin : d.maxCommuteMin,
@@ -100,6 +104,8 @@ export default function BriefPage() {
       navigate('/ops/review');
     }, 500);
   };
+  const pickSite = (lat: number, lng: number) => update('site', { id: 'L-PIN', city: 'Madrid', name: 'Your project site (map point)', operator: 'Project site', town: 'your map point', lat, lng });
+  const needsCompany = live && !draft.companyName?.trim();
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
@@ -107,6 +113,42 @@ export default function BriefPage() {
         <p className="text-sm font-semibold tracking-widest text-brand-700 uppercase">Step 1 · Brief</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">One brief for the whole team</h1>
         <p className="mt-3 text-lg text-stone-600">Tell us who is coming, where and for how long. We do the rest.</p>
+
+        {live && (
+          <div className="mt-6 space-y-4 rounded-2xl border border-stone-200 bg-white p-5" data-testid="live-project">
+            <h2 className="text-sm font-semibold text-ink">Your project in {FACTS.cities[0]}</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className={labelCls}>
+                Company
+                <input className={inputCls} placeholder="Your company" value={draft.companyName ?? ''} onChange={(e) => update('companyName', e.target.value)} data-testid="live-company" />
+              </label>
+              <label className={labelCls}>
+                Project
+                <input className={inputCls} placeholder="e.g. Data-centre fit-out" value={draft.projectName} onChange={(e) => update('projectName', e.target.value)} data-testid="live-projectname" />
+              </label>
+            </div>
+            <label className={labelCls}>
+              Project site
+              <select
+                className={inputCls}
+                value={draft.site?.id ?? ''}
+                onChange={(e) => {
+                  const s = MADRID_PROJECT_SITES.find((x) => x.id === e.target.value);
+                  if (s) update('site', s);
+                }}
+                data-testid="live-site"
+              >
+                {draft.site?.id === 'L-PIN' && <option value="L-PIN">Your map point ({draft.site.lat.toFixed(4)}, {draft.site.lng.toFixed(4)})</option>}
+                {MADRID_PROJECT_SITES.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs font-normal text-stone-500">Or click the map to place your exact site.</span>
+            </label>
+          </div>
+        )}
 
 
         <div className="mt-6 rounded-2xl border border-stone-200 bg-white p-5" data-testid="brief-reader">
@@ -170,7 +212,7 @@ export default function BriefPage() {
 
         <dl className="mt-6 grid grid-cols-2 gap-4" data-testid="brief-summary">
           <Fact label="Who" missing={isMissing('people')} value={`${draft.employees.length} engineers`} />
-          <Fact label="Where" missing={isMissing('city')} value={siteById(draft.siteId).town} />
+          <Fact label="Where" missing={isMissing('city')} value={briefSite(draft).town} />
           <Fact label="How long" missing={isMissing('months', 'start')} value={`${draft.months} months`} sub={`${formatDate(draft.start)} → ${formatDate(stayEnd(draft.start, draft.months))}`} />
           <Fact label="Budget" missing={isMissing('budget', 'maxCommuteMin')} value={`≤ ${eur(draft.budgetCaps.engineer)}/mo`} sub={`per apartment · ≤ ${draft.maxCommuteMin} min commute`} />
         </dl>
@@ -178,7 +220,7 @@ export default function BriefPage() {
         <button
           type="button"
           onClick={build}
-          disabled={busy || draft.employees.length === 0 || missing.size > 0}
+          disabled={busy || draft.employees.length === 0 || missing.size > 0 || needsCompany}
           className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-700 px-6 py-4 text-lg font-semibold text-white hover:bg-brand-800 disabled:bg-stone-300 sm:w-auto"
           data-testid="generate-plan"
         >
@@ -193,6 +235,8 @@ export default function BriefPage() {
           )}
         </button>
 
+        {needsCompany && <p className="mt-2 text-sm text-stone-500">Add your company name above to build the plan.</p>}
+
         <details className="mt-8 rounded-2xl border border-stone-200 bg-white p-5" open={editOpen} onToggle={(e) => setEditOpen((e.target as HTMLDetailsElement).open)} data-testid="brief-edit">
           <summary className="cursor-pointer text-sm font-semibold text-ink">Edit the brief</summary>
           <div className="mt-4 space-y-4">
@@ -200,6 +244,7 @@ export default function BriefPage() {
               <div className={labelCls}>City</div>
               <div className="mt-2">
                 <CityChips
+                  launchOnly={live}
                   city={city}
                   onChange={(c) => {
                     update('siteId', siteForCity(c).id);
@@ -218,7 +263,7 @@ export default function BriefPage() {
                   className={inputCls}
                   value={draft.employees.length}
                   onChange={(e) => {
-                    update('employees', teamOf(Math.max(1, Math.min(100, Number(e.target.value) || 1))));
+                    update('employees', team(Math.max(1, Math.min(100, Number(e.target.value) || 1))));
                     fill('people');
                   }}
                   onBlur={() => fill('people')}
@@ -292,20 +337,22 @@ export default function BriefPage() {
               <button type="button" className="rounded-full px-4 py-2 font-medium ring-1 ring-stone-300 hover:ring-ink" onClick={() => fileRef.current?.click()}>
                 Upload team CSV
               </button>
+{!live && (
               <button type="button" className="rounded-full px-4 py-2 font-medium ring-1 ring-stone-300 hover:ring-ink" onClick={() => update('employees', DEMO_EMPLOYEES)}>
                 Use demo team (20)
               </button>
+              )}
               <a className="text-stone-600 underline" href={`${import.meta.env.BASE_URL}demo-team.csv`} download>
                 CSV sample
               </a>
             </div>
-            <p className="text-xs text-stone-500">Company: {company.name}. Policy: one apartment (1-bed or larger) per engineer.</p>
+            <p className="text-xs text-stone-500">Company: {live ? draft.companyName || '—' : company.name}. Policy: one apartment (1-bed or larger) per engineer.</p>
           </div>
         </details>
       </section>
 
       <section aria-label="Map of the city">
-        <CityMap city={city} height={460} />
+        <CityMap city={city} height={460} site={briefSite(draft)} onPick={live ? pickSite : undefined} />
       </section>
     </div>
   );
