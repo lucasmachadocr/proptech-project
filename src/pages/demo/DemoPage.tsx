@@ -76,7 +76,7 @@ export default function DemoPage() {
             {FACTS.cities[0]}: real flats, live today
           </h2>
           <p className="text-sm text-stone-600">
-            Furnished 1-bedroom flats listed publicly on Spotahome, collected {formatDate(LIVE_LISTINGS_COLLECTED)}. Each dot is a real listing (neighbourhood location); tap one to open it.
+            Furnished flats listed publicly on Spotahome, Airbnb and Booking.com, collected {formatDate(LIVE_LISTINGS_COLLECTED)}. Each dot is a real listing; tap one to see it.
           </p>
         </div>
         <CityMap city={FACTS.cities[0]} units={LIVE_UNITS} site={MADRID_PROJECT_SITES[0]} height={380} />

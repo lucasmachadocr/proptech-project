@@ -156,7 +156,7 @@ export default function CityMap({ city, chosen, height = 420, showZones = true, 
               <Explain label="How is the commute estimated?">Straight-line distance × {ROAD_FACTOR} road factor at {AVG_SPEED_KMH} km/h. Phase 2 uses a routing API with traffic.</Explain>
             </div>
             <div className="mt-0.5 truncate text-xs text-stone-500">{selected.amenities.slice(0, 4).join(' · ')}</div>
-            {selected.sourceUrl && <ListingLink unit={selected} />}
+            {selected.source && <div className="mt-0.5 text-xs text-stone-500">Listed on {selected.source} · public listing, availability not confirmed</div>}
           </div>
           <button type="button" onClick={() => setSelected(null)} className="rounded-lg px-2 py-1 text-sm text-stone-500 hover:bg-stone-100" aria-label="Close">
             ✕

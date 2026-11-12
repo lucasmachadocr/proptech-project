@@ -73,6 +73,6 @@ test('no horizontal scroll at 390 px in live mode', async ({ page }) => {
   await expect(page.getByTestId('plan-options')).toBeVisible();
   await noHorizontalScroll(page, 'Live options');
   await page.getByTestId('release-plan').click();
-  await expect(page.getByTestId('listing-link').first()).toBeVisible();
+  await expect(page.getByTestId('listing-card').first()).toBeVisible();
   await noHorizontalScroll(page, 'Live plan');
 });
