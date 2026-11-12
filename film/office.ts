@@ -1,4 +1,5 @@
-// Scene 1: HR at her desk, low-poly and minimal. The request arrives on her screen, line by line.
+// Scene 2: HR at her desk, low-poly and minimal. The request arrives; the traditional way piles up
+// (searches, landlords, contracts, hours); then Settle In turns it into one brief.
 import * as THREE from 'three';
 import { FACTS } from './data';
 
@@ -94,9 +95,9 @@ export function createOffice(canvas: HTMLCanvasElement) {
   head.castShadow = true;
   scene.add(head);
 
-  // The monitor tells "before vs after": the request arrives (0–1.6 s), then what it used to mean —
-  // 20 searches, 20 landlords, 20 contracts, 20 invoices piling up (1.6–4.4 s) — then everything
-  // collapses into one Settle In brief (4.4–6.2 s).
+  // Local timeline (s): request 0.3–1.6 · traditional way piles up 1.6–6.2 · Settle In collapses it
+  // into one brief 6.8–8.4 · dolly 0–10 · push into the screen 10.2–12.6.
+  const T = { email: 0.3, pile0: 1.6, pileDur: 4.6, merge0: 6.8, mergeDur: 1.6, dolly: 10, push0: 10.2, pushDur: 2.4 };
   const TAGS = ['Search', 'Landlord', 'Contract', 'Invoice'];
   const font = (w: number, px: number) => `${w} ${px}px Avenir Next, Helvetica, sans-serif`;
   function drawScreen(t: number) {
@@ -107,15 +108,15 @@ export function createOffice(canvas: HTMLCanvasElement) {
     ctx.fillStyle = '#6E6059';
     ctx.font = font(700, 24);
     ctx.fillText(`New request · ${FACTS.demo.people} engineers · ${FACTS.demo.city} · ${FACTS.demo.months} months`, 26, 35);
-    if (t > 0.4 && t < 1.8) {
-      ctx.globalAlpha = Math.min(1, (t - 0.4) * 3);
+    if (t > T.email && t < T.pile0 + 0.2) {
+      ctx.globalAlpha = Math.min(1, (t - T.email) * 3);
       ctx.fillStyle = '#2A2320';
       ctx.font = font(500, 30);
       EMAIL.slice(3).forEach((line, i) => ctx.fillText(line, 40, 140 + i * 52));
       ctx.globalAlpha = 1;
     }
-    const pile = Math.max(0, Math.min(1, (t - 1.6) / 2.4)); // cards appearing
-    const merge = Math.max(0, Math.min(1, (t - 4.4) / 1.4)); // cards collapsing
+    const pile = Math.max(0, Math.min(1, (t - T.pile0) / T.pileDur)); // cards appearing
+    const merge = Math.max(0, Math.min(1, (t - T.merge0) / T.mergeDur)); // cards collapsing
     const me = merge < 0.5 ? 4 * merge ** 3 : 1 - (-2 * merge + 2) ** 3 / 2;
     const n = Math.floor(pile * 80);
     for (let i = 0; i < n && merge < 1; i++) {
@@ -151,6 +152,12 @@ export function createOffice(canvas: HTMLCanvasElement) {
       ctx.font = font(800, 21);
       const k = Math.min(FACTS.demo.people, Math.ceil(pile * FACTS.demo.people));
       ctx.fillText(`${k} searches · ${k} landlords · ${k} contracts`, 574, 34);
+      // hours spent, in a second red tag
+      ctx.fillStyle = '#2A2320';
+      ctx.fillRect(820, 548, 190, 44);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = font(800, 24);
+      ctx.fillText(`${Math.round(pile * FACTS.kpi.opsHoursManual)} hours`, 840, 578);
       ctx.globalAlpha = 1;
     }
     if (merge > 0.35) {
@@ -177,12 +184,12 @@ export function createOffice(canvas: HTMLCanvasElement) {
     tex.needsUpdate = true;
   }
 
-  /** t in seconds from the start of the scene (0–8.6). */
+  /** t in seconds from the start of the scene (0–12.6). */
   function render(t: number) {
-    const e = Math.min(1, t / 6.2);
+    const e = Math.min(1, t / T.dolly);
     const ease = 1 - (1 - e) ** 3;
     // Dolly in over the shoulder; then (6.2–8.6 s) push straight into the screen — the transition to the map.
-    const p = Math.max(0, Math.min(1, (t - 6.2) / 2.4));
+    const p = Math.max(0, Math.min(1, (t - T.push0) / T.pushDur));
     const pe = p * p * (3 - 2 * p);
     const cx = 3.0 - 1.4 * ease;
     const cy = 3.4 - 1.0 * ease;
