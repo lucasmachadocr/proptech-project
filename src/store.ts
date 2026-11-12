@@ -102,6 +102,16 @@ export const useStore = create<State>()(
         const base = plan ?? get().runAllocation();
         const existing = new Set(brief.employees.map((e) => e.id));
         const joinDate = addMonths(brief.start, fromMonth - 1);
+        if (addEngineers < 0) {
+          // The team shrinks: the last people leave at the start of `fromMonth`; their flats are released.
+          const n = Math.min(-addEngineers, brief.employees.length - 1);
+          const employees = brief.employees.map((e, i) => (i >= brief.employees.length - n ? { ...e, end: joinDate } : e));
+          const next: Brief = { ...brief, employees };
+          const result = reallocate(base, brief, next, units);
+          const change: ChangeRequest = { label: `−${n} engineers from month ${fromMonth}`, extendMonths: 0, addEngineers: -n, fromMonth, brief: next, result };
+          set({ change });
+          return change;
+        }
         const extra =
           get().mode === 'live'
             ? genericTeam(addEngineers, brief.employees.length + 1, fromMonth > 1 ? joinDate : undefined)

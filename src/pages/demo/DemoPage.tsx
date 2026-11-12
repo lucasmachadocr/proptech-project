@@ -106,6 +106,13 @@ export default function DemoPage() {
               )}
             </li>
           ))}
+          <li className="flex flex-col justify-between gap-3 rounded-xl bg-cream/60 p-4 ring-1 ring-stone-200 sm:col-span-2 lg:col-span-4" data-testid="coming-europe">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <span className="font-semibold text-ink">Europe</span>
+              <span className="text-sm font-semibold tracking-wide text-brand-700 uppercase">{FACTS.expansionNext.split(' · ')[1]}</span>
+            </div>
+            <span className="text-xs text-stone-500">First project hubs outside Spain, picked by our demand finder.</span>
+          </li>
         </ul>
       </section>
 

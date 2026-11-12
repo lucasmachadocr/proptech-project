@@ -59,12 +59,12 @@ export const DEMO_STEPS: DemoStep[] = [
     n: 4,
     key: 'replan',
     title: 'Re-plan',
-    say: 'Projects change: 3 more engineers join from month 3. Nobody already housed moves; the engine finds 3 more apartments nearby and the client sees the cost before approving: 3 × €1,992 × 4 months = +€23,904, still in the 4% tier.',
+    say: `Projects change: from month ${FACTS.replan.fromMonth} the team drops to ${FACTS.demo.people - FACTS.replan.people}. With Flex, ${FACTS.replan.people} flats are released with 30 days' notice and nobody else moves. The client sees the saving before approving: ${eur(-FACTS.replan.delta)} (${FACTS.replan.people} × ${eur(FACTS.replan.pricePerApartmentMonth)} × ${FACTS.replan.months} months), against ${eur(-FACTS.replan.deltaWithoutFlex)} without Flex.`,
     run: () => {
       ensureReleased();
       const s = useStore.getState();
       if (!s.approvedAt) s.approvePlan();
-      s.proposeChange(3, 3);
+      s.proposeChange(-FACTS.replan.people, FACTS.replan.fromMonth);
       return '/client/change';
     },
   },
