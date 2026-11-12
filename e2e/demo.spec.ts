@@ -152,6 +152,7 @@ test('live mode: your own mission in Madrid on real public listings', async ({ p
   await home(page);
   await expect(page.getByTestId('coming-next')).toContainText('Valencia');
   await expect(page.getByTestId('coming-next')).toContainText('Year 2');
+  await expect(page.getByTestId('coming-next').getByRole('link', { name: 'Tell me when it opens' }).first()).toHaveAttribute('href', /^mailto:/);
   await page.getByTestId('start-live').click();
 
   await test.step('Brief: company, site and team', async () => {
