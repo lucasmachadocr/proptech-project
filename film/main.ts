@@ -134,8 +134,9 @@ let frames: Record<string, number> = {};
 
 // ── Captions ─────────────────────────────────────────────────────────────
 const CAPS = [
-  { a: 0.8, b: 7.7, eye: 'Monday, 9:02 · HR', html: `Iberia Grid won a data-centre fit-out.<br><span>${FACTS.demo.people} engineers need a home.</span>`, dark: false },
-  { a: 9.4, b: 20.4, eye: '1 · Brief', html: 'One brief.<br><span>The AI reads it.</span>' },
+  { a: 0.6, b: 4.3, eye: 'Before Settle In', html: `${FACTS.demo.people} engineers. ${FACTS.demo.people} searches.<br><span>${FACTS.demo.people} landlords, ${FACTS.demo.people} contracts.</span>` },
+  { a: 4.6, b: 7.6, eye: 'With Settle In', html: 'One brief.<br><span>One partner.</span>' },
+  { a: 9.4, b: 20.4, eye: '1 · Brief', html: 'HR pastes the email.<br><span>The AI reads it.</span>' },
   { a: 23.4, b: 38.2, eye: '2 · Plan', html: 'Three plans.<br><span>Cost against commute.</span>' },
   { a: 38.8, b: 48.2, eye: '3 · Approve', html: 'A person checks.<br><span>One click approves.</span>' },
   { a: 49, b: 66, eye: '4 · Live', html: `Day 1. Everyone lives<br><span>≤ ${DEMO_BRIEF.maxCommuteMin} min from the site.</span>` },
@@ -150,6 +151,7 @@ const cityEls: HTMLElement[] = [];
 
 async function init() {
   $('tagline').textContent = FACTS.brand.tagline;
+  $('endline').textContent = 'One brief. One plan. One invoice.';
   try {
     frames = await (await fetch('./.frames/manifest.json')).json();
   } catch {
@@ -201,9 +203,9 @@ async function seek(t: number) {
   const px = mpp(cam.zoom); // metres per pixel now
 
   // Scene 1 · office (fades into the map)
-  const officeO = 1 - seg(t, 7.4, 8.6);
+  const officeO = 1 - seg(t, 7.9, 8.7);
   op('office', officeO);
-  if (officeO > 0) office.render(Math.min(t, 8.6));
+  if (officeO > 0) office.render(Math.min(t, 8.7));
 
   // Site: campus block + a pin that rises in scene 2
   const pinH = out(seg(t, 11.2, 13.4)) * 150 * px * (t > 76 ? 1 - seg(t, 76, 78) : 1);
@@ -355,6 +357,13 @@ async function seek(t: number) {
       await img.decode().catch(() => {});
     }
   }
+
+  // Step tracker: where we are in the process, the thread that ties the scenes together
+  const STEPS = [8.4, 20.6, 38.4, 48.6, 66.4, 76.8];
+  const cur = STEPS.findIndex((x, i) => t >= x && t < STEPS[i + 1]);
+  document.querySelectorAll('#steps li').forEach((li, i) => li.classList.toggle('on', i === cur));
+  document.querySelectorAll('#steps li').forEach((li, i) => li.classList.toggle('done', cur > i));
+  op('steps', fadeWin(t, 8.4, 77.2, 0.6));
 
   // End card and the first fade-in
   op('end', seg(t, 84.2, 85.2));

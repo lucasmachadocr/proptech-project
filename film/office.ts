@@ -94,43 +94,104 @@ export function createOffice(canvas: HTMLCanvasElement) {
   head.castShadow = true;
   scene.add(head);
 
-  function drawScreen(chars: number, notify: number) {
+  // The monitor tells "before vs after": the request arrives (0–1.6 s), then what it used to mean —
+  // 20 searches, 20 landlords, 20 contracts, 20 invoices piling up (1.6–4.4 s) — then everything
+  // collapses into one Settle In brief (4.4–6.2 s).
+  const TAGS = ['Search', 'Landlord', 'Contract', 'Invoice'];
+  const font = (w: number, px: number) => `${w} ${px}px Avenir Next, Helvetica, sans-serif`;
+  function drawScreen(t: number) {
     ctx.fillStyle = '#FFFDFB';
     ctx.fillRect(0, 0, 1024, 600);
     ctx.fillStyle = '#F2E9E1';
     ctx.fillRect(0, 0, 1024, 54);
-    ctx.fillStyle = '#C4573D';
-    ctx.font = '700 26px Avenir Next, Helvetica, sans-serif';
-    ctx.fillText('Inbox', 28, 36);
-    ctx.fillStyle = '#2A2320';
-    let left = chars;
-    EMAIL.forEach((line, i) => {
-      const n = Math.max(0, Math.min(line.length, left));
-      left -= line.length;
-      ctx.font = i < 2 ? '600 25px Avenir Next, Helvetica, sans-serif' : '500 30px Avenir Next, Helvetica, sans-serif';
-      ctx.fillStyle = i < 2 ? '#6E6059' : '#2A2320';
-      ctx.fillText(line.slice(0, n), 40, 104 + i * (i < 2 ? 40 : 52) + (i >= 2 ? 30 : 0));
-    });
-    if (notify > 0) {
-      ctx.globalAlpha = Math.min(1, notify);
+    ctx.fillStyle = '#6E6059';
+    ctx.font = font(700, 24);
+    ctx.fillText(`New request · ${FACTS.demo.people} engineers · ${FACTS.demo.city} · ${FACTS.demo.months} months`, 26, 35);
+    if (t > 0.4 && t < 1.8) {
+      ctx.globalAlpha = Math.min(1, (t - 0.4) * 3);
+      ctx.fillStyle = '#2A2320';
+      ctx.font = font(500, 30);
+      EMAIL.slice(3).forEach((line, i) => ctx.fillText(line, 40, 140 + i * 52));
+      ctx.globalAlpha = 1;
+    }
+    const pile = Math.max(0, Math.min(1, (t - 1.6) / 2.4)); // cards appearing
+    const merge = Math.max(0, Math.min(1, (t - 4.4) / 1.4)); // cards collapsing
+    const me = merge < 0.5 ? 4 * merge ** 3 : 1 - (-2 * merge + 2) ** 3 / 2;
+    const n = Math.floor(pile * 80);
+    for (let i = 0; i < n && merge < 1; i++) {
+      const col = i % 10;
+      const row = Math.floor(i / 10) % 4;
+      const layer = Math.floor(i / 40);
+      const x0 = 26 + col * 98 + layer * 14;
+      const y0 = 78 + row * 118 + layer * 14;
+      const x = x0 + (462 - x0) * me;
+      const y = y0 + (300 - y0) * me;
+      const sc = 1 - 0.9 * me;
+      ctx.globalAlpha = 1 - me;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.strokeStyle = '#E2D6CC';
+      ctx.lineWidth = 2;
+      ctx.fillRect(x, y, 88 * sc, 104 * sc);
+      ctx.strokeRect(x, y, 88 * sc, 104 * sc);
+      ctx.fillStyle = '#E8DED5';
+      ctx.fillRect(x + 6 * sc, y + 6 * sc, 76 * sc, 44 * sc);
+      ctx.fillStyle = i % 4 === 1 ? '#C4573D' : '#9C8E87';
+      ctx.font = font(700, Math.max(6, 14 * sc));
+      ctx.fillText(`${TAGS[i % 4]} ${Math.floor(i / 4) + 1}`, x + 6 * sc, y + 72 * sc);
+      ctx.fillStyle = '#E2D6CC';
+      ctx.fillRect(x + 6 * sc, y + 82 * sc, 60 * sc, 6 * sc);
+    }
+    ctx.globalAlpha = 1;
+    if (pile > 0.15 && merge < 0.4) {
+      // the tally, in red
+      ctx.globalAlpha = 1 - merge * 2.5;
+      ctx.fillStyle = '#C4573D';
+      ctx.fillRect(560, 6, 450, 42);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = font(800, 21);
+      const k = Math.min(FACTS.demo.people, Math.ceil(pile * FACTS.demo.people));
+      ctx.fillText(`${k} searches · ${k} landlords · ${k} contracts`, 574, 34);
+      ctx.globalAlpha = 1;
+    }
+    if (merge > 0.35) {
+      // one brief
+      const a = Math.min(1, (merge - 0.35) / 0.4);
+      ctx.globalAlpha = a;
+      const w = 560 * (0.7 + 0.3 * a);
+      const h = 300 * (0.7 + 0.3 * a);
+      const x = 512 - w / 2;
+      const y = 330 - h / 2;
       ctx.fillStyle = '#C4573D';
       ctx.beginPath();
-      ctx.arc(980, 27, 12, 0, Math.PI * 2);
+      ctx.roundRect(x, y, w, h, 22);
       ctx.fill();
+      ctx.fillStyle = '#F7EEE7';
+      ctx.font = font(800, 26 * a + 6);
+      ctx.fillText('SETTLE IN', x + 36, y + 62);
+      ctx.font = font(800, 52 * a + 8);
+      ctx.fillText('One brief.', x + 36, y + 140);
+      ctx.font = font(600, 26 * a + 6);
+      ctx.fillText(`${FACTS.demo.people} engineers · ${FACTS.demo.city} · ${FACTS.demo.months} months`, x + 36, y + 200);
       ctx.globalAlpha = 1;
     }
     tex.needsUpdate = true;
   }
 
-  const total = EMAIL.reduce((n, l) => n + l.length, 0);
-  /** t in seconds from the start of the scene (0–8). */
+  /** t in seconds from the start of the scene (0–8.6). */
   function render(t: number) {
-    const e = Math.min(1, t / 8);
+    const e = Math.min(1, t / 6.2);
     const ease = 1 - (1 - e) ** 3;
-    // Dolly in over the shoulder; the scene sits in the upper right, the caption in the lower left.
-    camera.position.set(3.0 - 1.4 * ease, 3.4 - 1.0 * ease, 5.6 - 2.4 * ease);
-    camera.lookAt(-0.55 + 0.25 * ease, 1.2 - 0.05 * ease, -0.2);
-    drawScreen(Math.floor(Math.max(0, (t - 1.2) / 4.6) * total), t > 0.6 ? (t - 0.6) * 3 : 0);
+    // Dolly in over the shoulder; then (6.2–8.6 s) push straight into the screen — the transition to the map.
+    const p = Math.max(0, Math.min(1, (t - 6.2) / 2.4));
+    const pe = p * p * (3 - 2 * p);
+    const cx = 3.0 - 1.4 * ease;
+    const cy = 3.4 - 1.0 * ease;
+    const cz = 5.6 - 2.4 * ease;
+    camera.position.set(cx + (0 - cx) * pe, cy + (1.75 - cy) * pe, cz + (0.55 - cz) * pe);
+    const lx = -0.55 + 0.25 * ease;
+    const ly = 1.2 - 0.05 * ease;
+    camera.lookAt(lx + (0 - lx) * pe, ly + (1.75 - ly) * pe, -0.2 + (-0.32 + 0.2) * pe);
+    drawScreen(t);
     renderer.render(scene, camera);
   }
   return { render };

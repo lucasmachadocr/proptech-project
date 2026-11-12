@@ -37,6 +37,11 @@
       #end .logo b { font-size: 96px; font-weight: 800; letter-spacing: -2px; }
       #end h2 { font-size: 44px; font-weight: 600; margin-top: 28px; }
       #end p { margin-top: 44px; font-size: 28px; font-weight: 700; padding: 12px 28px; border: 2px solid rgba(247, 238, 231, 0.6); border-radius: 40px; }
+      #steps { position: absolute; left: 50%; top: 44px; z-index: 9; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; list-style: none; border-radius: 40px; background: rgba(255, 253, 251, 0.92); box-shadow: 0 8px 24px rgba(42, 35, 32, 0.12); }
+      #steps li { padding: 9px 20px; border-radius: 30px; font-size: 19px; font-weight: 700; color: #9c8e87; transition: none; }
+      #steps li.done { color: var(--ink); }
+      #steps li.on { background: var(--ink); color: var(--cream); }
+      #end p.line { margin: 0 0 40px; padding: 0; border: none; font-size: 30px; font-weight: 800; letter-spacing: 1px; opacity: 0.9; }
       #fade { position: absolute; inset: 0; z-index: 11; background: var(--cream); pointer-events: none; }
     </style>
   </head>
@@ -49,7 +54,9 @@
     <div class="badge" id="clock"></div>
     <div class="badge" id="seal"></div>
     <div id="cities"></div>
+    <ol id="steps"><li>1 Brief</li><li>2 Plan</li><li>3 Approve</li><li>4 Live</li><li>5 Re-plan</li></ol>
     <div id="end">
+      <p class="line" id="endline"></p>
       <div class="logo">
         <svg viewBox="0 0 48 56" width="104" height="122"><path d="M0 24a24 24 0 0 1 48 0v32H0z" fill="#F7EEE7" /><path d="M15 31a9 9 0 0 1 18 0v25H15z" fill="#C4573D" /><circle cx="24" cy="42" r="2.6" fill="#F7EEE7" /></svg>
         <b>settle in</b>

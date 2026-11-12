@@ -152,8 +152,9 @@ rectFrames();
 const server = await filmServer();
 try {
   if (args.has('stills')) {
-    const KEY = [4, 15, 27, 34, 45, 52, 70, 82, 88];
-    await render(KEY.map((t, i) => [i + 1, t]), `${OUT}/storyboard`, (i, t) => `${i}-t${String(t).padStart(2, '0')}.jpg`);
+    const KEY = typeof args.get('stills') === 'string' ? args.get('stills').split(',').map(Number) : [2.5, 5.5, 8.2, 15, 27, 45, 52, 70, 82, 88];
+    rmSync(`${OUT}/storyboard`, { recursive: true, force: true });
+    await render(KEY.map((t, i) => [i + 1, t]), `${OUT}/storyboard`, (i, t) => `${String(i).padStart(2, '0')}-t${String(t).padStart(4, '0')}.jpg`);
     console.log(`storyboard → ${OUT}/storyboard/`);
   } else {
     const from = Number(args.get('from') ?? 0);
