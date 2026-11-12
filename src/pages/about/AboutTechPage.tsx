@@ -11,6 +11,9 @@ const BUILT_WITH: Tool[] = [
   { name: 'Claude Code (Anthropic)', use: 'AI coding assistant used to write this MVP', cost: 'Paid', note: 'Used under a paid Claude subscription. Team reviewed the plan, data and outputs.' },
   { name: 'Claude (Anthropic)', use: 'Research, document review and drafting of the business plan', cost: 'Paid', note: 'Paid Claude subscription' },
   { name: 'transformers.js + DistilBERT (SQuAD)', use: 'Language model that reads the housing request (brief reader). Runs in the browser', cost: 'Free', note: 'Open source (Apache-2.0). Model downloaded from Hugging Face on first use, about 65 MB' },
+  { name: 'transformers.js + Whisper (tiny, English)', use: 'Speech model that turns a voice brief into text. Runs in the browser', cost: 'Free', note: 'Open source (MIT). Model downloaded from Hugging Face on first use, about 40 MB' },
+  { name: 'MapLibre GL + OpenFreeMap', use: '3D map of the plan: each flat lit up on its real building', cost: 'Free', note: 'Open source (BSD-3); OpenStreetMap data, no API key' },
+  { name: 'OpenStreetMap Nominatim', use: 'Finds the project address typed by HR', cost: 'Free', note: 'Fair-use policy; one search per click' },
   { name: 'Vite', use: 'Build tool and dev server', cost: 'Free', note: 'Open source (MIT)' },
   { name: 'React + React DOM', use: 'User interface', cost: 'Free', note: 'Open source (MIT)' },
   { name: 'TypeScript', use: 'Typed JavaScript', cost: 'Free', note: 'Open source (Apache-2.0)' },
@@ -40,6 +43,12 @@ export const AI_MODULES: AiModule[] = [
     kind: 'Language model',
     how: 'HR pastes the request as written. An open-source language model (DistilBERT, question answering) reads people, city, start date, length of stay, commute and budget, and shows the words and the confidence behind each field. A rule parser takes over if the model cannot load.',
     next: 'a hosted LLM that also reads attached HR files and team lists.',
+  },
+  {
+    name: 'Voice brief',
+    kind: 'Language model',
+    how: 'HR can send a voice message instead of typing. An open-source speech model (Whisper tiny) transcribes it in the browser, then the brief reader reads the text. Nothing leaves the device.',
+    next: 'any language, and briefs sent from WhatsApp.',
   },
   {
     name: 'Allocation and re-plan engine',

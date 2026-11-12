@@ -5,10 +5,12 @@ import { AiBadge, inputCls, labelCls } from '../../components/ui';
 import { MODEL_LABEL, SAMPLE_REQUEST, readBrief, type BriefReading, type FieldKey } from '../../ai/briefReader';
 import { DEMO_EMPLOYEES, genericTeam } from '../../data/brief';
 import { COMPANIES } from '../../data/companies';
-import { MADRID_PROJECT_SITES, siteForCity, briefSite } from '../../data/sites';
+import { siteForCity, briefSite } from '../../data/sites';
 import { eur, pct } from '../../lib/format';
 import { formatDate, stayEnd } from '../../lib/dates';
 import { useStore } from '../../store';
+import { BudgetLinked, NumberPick, ProjectLocation, Requirements, StayDates, applyNeeds, type Need } from './LiveBrief';
+import { SPEECH_MODEL_LABEL, loadSpeechModel, startRecording, toMono16k } from '../../ai/speech';
 import { FACTS } from '../../data/facts';
 import type { Brief, Employee, Role } from '../../types';
 
@@ -65,10 +67,42 @@ export default function BriefPage() {
     });
   const isMissing = (...keys: FieldKey[]) => keys.some((k) => missing.has(k));
 
-  const read = async () => {
+  const [needs, setNeeds] = useState<Need[]>([]);
+  // Voice message: record, transcribe in the browser (Whisper), then read like a typed request.
+  const [voice, setVoice] = useState<'idle' | 'recording' | 'transcribing'>('idle');
+  const [voiceNote, setVoiceNote] = useState('');
+  const recorder = useRef<{ stop: () => Promise<Blob> } | null>(null);
+  const toggleVoice = async () => {
+    if (voice === 'recording' && recorder.current) {
+      setVoice('transcribing');
+      try {
+        const audio = await toMono16k(await recorder.current.stop());
+        const asr = await loadSpeechModel((r) => setVoiceNote(`Loading the speech model… ${pct(r)}`));
+        setVoiceNote('Transcribing…');
+        const text = await asr(audio);
+        setRequest(text);
+        setVoiceNote(`Transcribed by ${SPEECH_MODEL_LABEL}.`);
+        if (text.length >= 20) await read(text);
+      } catch {
+        setVoiceNote('The voice message could not be transcribed. Please type the request.');
+      }
+      recorder.current = null;
+      setVoice('idle');
+      return;
+    }
+    try {
+      recorder.current = await startRecording();
+      setVoice('recording');
+      setVoiceNote('Recording… tap again to send.');
+    } catch {
+      setVoiceNote('No microphone access. Please type the request.');
+    }
+  };
+
+  const read = async (text: string = request) => {
     setReading(null);
     setLoad(0);
-    const r = await readBrief(request, (p) => setLoad(p.ratio));
+    const r = await readBrief(text, (p) => setLoad(p.ratio));
     setLoad(null);
     setReading(r);
     const gaps = new Set(r.fields.filter((f) => f.value === null).map((f) => f.key));
@@ -98,7 +132,7 @@ export default function BriefPage() {
     setBusy(true);
     // Short, honest progress state: the engine itself runs in a few milliseconds.
     setTimeout(() => {
-      setBrief(draft);
+      setBrief(live ? { ...draft, employees: applyNeeds(genericTeam(draft.employees.length), needs) } : draft);
       runAllocation();
       if (demoStep) setDemoStep(2);
       navigate('/ops/review');
@@ -127,33 +161,25 @@ export default function BriefPage() {
                 <input className={inputCls} placeholder="e.g. Data-centre fit-out" value={draft.projectName} onChange={(e) => update('projectName', e.target.value)} data-testid="live-projectname" />
               </label>
             </div>
-            <label className={labelCls}>
-              Project site
-              <select
-                className={inputCls}
-                value={draft.site?.id ?? ''}
-                onChange={(e) => {
-                  const s = MADRID_PROJECT_SITES.find((x) => x.id === e.target.value);
-                  if (s) update('site', s);
-                }}
-                data-testid="live-site"
-              >
-                {draft.site?.id === 'L-PIN' && <option value="L-PIN">Your map point ({draft.site.lat.toFixed(4)}, {draft.site.lng.toFixed(4)})</option>}
-                {MADRID_PROJECT_SITES.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-              <span className="mt-1 block text-xs font-normal text-stone-500">Or click the map to place your exact site.</span>
-            </label>
+            <ProjectLocation site={draft.site} onSite={(st) => update('site', st)} />
           </div>
         )}
 
 
         <div className="mt-6 rounded-2xl border border-stone-200 bg-white p-5" data-testid="brief-reader">
+          {live && (
+            <div className="mb-3 flex items-center gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-800" aria-hidden>
+                HR
+              </span>
+              <div className="text-sm">
+                <div className="font-semibold text-ink">{draft.companyName ? `${draft.companyName} · HR` : 'You · HR'}</div>
+                <div className="text-stone-500">Write the request, paste an email, or send a voice message.</div>
+              </div>
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-ink">Paste the request as HR wrote it</h2>
+            <h2 className="text-sm font-semibold text-ink">{live ? 'Your request' : 'Paste the request as HR wrote it'}</h2>
             <button type="button" className="text-sm text-stone-600 underline" onClick={() => setRequest(SAMPLE_REQUEST)} data-testid="brief-sample">
               Use a sample email
             </button>
@@ -168,13 +194,27 @@ export default function BriefPage() {
           />
           <button
             type="button"
-            onClick={read}
+            onClick={() => read()}
             disabled={load !== null || request.trim().length < 20}
             className="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ring-1 ring-brand-700 text-brand-800 hover:bg-brand-50 disabled:text-stone-400 disabled:ring-stone-300"
             data-testid="brief-read"
           >
             {load !== null ? `Loading the language model… ${pct(load)}` : 'Read the request'} <AiBadge title={`Read by a language model that runs in this browser: ${MODEL_LABEL}`} />
           </button>
+          {live && (
+            <button
+              type="button"
+              onClick={toggleVoice}
+              disabled={voice === 'transcribing'}
+              className={`mt-3 ml-2 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ring-1 ${voice === 'recording' ? 'bg-brand-700 text-white ring-brand-700' : 'text-ink ring-stone-300 hover:ring-ink'} disabled:opacity-50`}
+              data-testid="brief-voice"
+              aria-pressed={voice === 'recording'}
+            >
+              {voice === 'recording' ? '■ Stop and send' : voice === 'transcribing' ? 'Transcribing…' : '🎙 Voice message'}
+              <AiBadge title={`Transcribed in this browser by ${SPEECH_MODEL_LABEL}`} />
+            </button>
+          )}
+          {voiceNote && <p className="mt-2 text-xs text-stone-500" data-testid="voice-note">{voiceNote}</p>}
           {load !== null && <p className="mt-2 text-xs text-stone-500">First use downloads the model (about 65 MB). After that it is cached and works offline.</p>}
           {reading && (
             <div className="mt-4" data-testid="brief-reading">
@@ -210,12 +250,30 @@ export default function BriefPage() {
           )}
         </div>
 
+        {live && (
+          <div className="mt-6 grid gap-3 sm:grid-cols-2" data-testid="brief-summary">
+            <NumberPick label="Who · engineers" value={draft.employees.length} options={[5, 10, 20, 30]} unit="people" min={1} max={100} missing={isMissing('people')} onChange={(n) => (update('employees', genericTeam(n)), fill('people'))} testId="live-people" />
+            <NumberPick label="How long · months" value={draft.months} options={[3, 6, 9, 12]} unit="months" min={2} max={12} missing={isMissing('months')} onChange={(n) => (update('months', n), fill('months'))} testId="live-months" />
+            <div className="rounded-2xl border border-stone-200 bg-white p-4">
+              <StayDates brief={draft} onStart={(d) => (update('start', d), fill('start'))} />
+            </div>
+            <NumberPick label="Max commute to the site" value={draft.maxCommuteMin} options={[20, 30, 45]} unit="min" min={10} max={60} missing={isMissing('maxCommuteMin')} onChange={(n) => (update('maxCommuteMin', n), fill('maxCommuteMin'))} testId="live-commute" />
+            <div className="sm:col-span-2">
+              <BudgetLinked brief={draft} perFlat={draft.budgetCaps.engineer} onPerFlat={(v) => (update('budgetCaps', { ...draft.budgetCaps, engineer: v, technician: v }), fill('budget'))} />
+            </div>
+            <div className="sm:col-span-2">
+              <Requirements needs={needs} onChange={setNeeds} max={draft.employees.length} />
+            </div>
+          </div>
+        )}
+        {!live && (
         <dl className="mt-6 grid grid-cols-2 gap-4" data-testid="brief-summary">
           <Fact label="Who" missing={isMissing('people')} value={`${draft.employees.length} engineers`} />
           <Fact label="Where" missing={isMissing('city')} value={briefSite(draft).town} />
           <Fact label="How long" missing={isMissing('months', 'start')} value={`${draft.months} months`} sub={`${formatDate(draft.start)} → ${formatDate(stayEnd(draft.start, draft.months))}`} />
           <Fact label="Budget" missing={isMissing('budget', 'maxCommuteMin')} value={`≤ ${eur(draft.budgetCaps.engineer)}/mo`} sub={`per apartment · ≤ ${draft.maxCommuteMin} min commute`} />
         </dl>
+        )}
 
         <button
           type="button"
@@ -237,6 +295,7 @@ export default function BriefPage() {
 
         {needsCompany && <p className="mt-2 text-sm text-stone-500">Add your company name above to build the plan.</p>}
 
+        {!live && (
         <details className="mt-8 rounded-2xl border border-stone-200 bg-white p-5" open={editOpen} onToggle={(e) => setEditOpen((e.target as HTMLDetailsElement).open)} data-testid="brief-edit">
           <summary className="cursor-pointer text-sm font-semibold text-ink">Edit the brief</summary>
           <div className="mt-4 space-y-4">
@@ -349,6 +408,7 @@ export default function BriefPage() {
             <p className="text-xs text-stone-500">Company: {live ? draft.companyName || '—' : company.name}. Policy: one apartment (1-bed or larger) per engineer.</p>
           </div>
         </details>
+        )}
       </section>
 
       <section aria-label="Map of the city">

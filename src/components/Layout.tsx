@@ -134,7 +134,7 @@ export default function Layout() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-5 text-sm text-stone-600 sm:px-6">
           {live ? (
             <span data-testid="footer-live">
-              <strong className="font-semibold text-ink">Real listings, simulated service.</strong> Flats from Spotahome (public listings), collected {formatDate(LIVE_LISTINGS_COLLECTED)}; availability not confirmed, locations by neighbourhood. Commute times are estimates.
+              <strong className="font-semibold text-ink">Real listings, simulated service.</strong> Flats from public listings on Spotahome, Airbnb and Booking.com, collected {formatDate(LIVE_LISTINGS_COLLECTED)}; availability not confirmed. Commute times are estimates.
             </span>
           ) : (
             <span>

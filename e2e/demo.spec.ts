@@ -155,26 +155,34 @@ test('live mode: your own mission in Madrid on real public listings', async ({ p
   await expect(page.getByTestId('coming-next').getByRole('link', { name: 'Tell me when it opens' }).first()).toHaveAttribute('href', /^mailto:/);
   await page.getByTestId('start-live').click();
 
-  await test.step('Brief: company, site and team', async () => {
+  await test.step('Brief: company, site, quick-pick numbers, linked budget, a family', async () => {
     await expect(page.getByTestId('generate-plan')).toBeDisabled(); // company name first
     await page.getByTestId('live-company').fill('Acme Data Centres');
-    await page.getByTestId('live-site').selectOption({ label: 'Valdebebas business district' });
-    await page.getByTestId('brief-edit').locator('summary').click();
-    await page.getByTestId('edit-people').fill('8');
-    await expect(page.getByTestId('brief-summary')).toContainText('8 engineers');
+    await page.getByTestId('live-site').getByRole('button', { name: 'Valdebebas business district' }).click();
+    await expect(page.getByTestId('live-site-now')).toContainText('Valdebebas');
+    await page.getByTestId('brief-summary').getByRole('button', { name: '5', exact: true }).click();
+    await expect(page.getByTestId('live-people')).toHaveValue('5');
+    await page.getByTestId('budget-month').fill('11000'); // team per month → 2,200 per flat
+    await expect(page.getByTestId('budget-flat')).toHaveValue('2200');
+    await page.getByTestId('add-family').click();
+    await expect(page.getByTestId('brief-voice')).toBeVisible();
     await page.getByTestId('generate-plan').click();
   });
 
-  await test.step('Options: three plans from real flats; pick the closest', async () => {
+  await test.step('Options: three plans from real flats, any marketplace; pick the closest', async () => {
     await expect(page.getByRole('heading', { name: 'Three plans for your team' })).toBeVisible();
-    await expect(page.getByText(/Real public listings \(Spotahome\)/)).toBeVisible();
+    await expect(page.getByText(/Real public listings \(/)).toBeVisible();
+    await page.getByTestId('source-filter').getByRole('radio', { name: /^Airbnb/ }).click();
+    await expect(page.getByTestId('listing-card').first()).toContainText('Airbnb');
     await page.getByTestId('option-C').click();
     await page.getByTestId('release-plan').click();
   });
 
-  await test.step('Approve and sign; every flat links to its public listing', async () => {
-    const links = page.getByTestId('listing-link');
-    await expect(links.first()).toHaveAttribute('href', /^https:\/\/www\.spotahome\.com\/madrid\/for-rent:apartments\/\d+$/);
+  await test.step('Approve and sign; flats are described (no links) and shown on the 3D map', async () => {
+    await expect(page.getByTestId('listing-card').first()).toContainText('Listed on');
+    await expect(page.getByTestId('listing-card').filter({ hasText: '(family)' }).first()).toContainText('2-bed');
+    await expect(page.locator('[data-testid=plan-explorer] a')).toHaveCount(0);
+    await expect(page.getByTestId('map3d')).toBeVisible();
     await expect(page.getByTestId('approve-plan')).toBeDisabled();
     await page.getByTestId('sign-agreement').locator('input').check();
     await page.getByTestId('approve-plan').click();
@@ -184,6 +192,6 @@ test('live mode: your own mission in Madrid on real public listings', async ({ p
   await test.step('Invoice billed to the company', async () => {
     await page.goto('#/client/invoice');
     await expect(page.getByTestId('invoice')).toContainText('Acme Data Centres');
-    await expect(page.getByTestId('footer-live')).toContainText('Spotahome');
+    await expect(page.getByTestId('footer-live')).toContainText('Airbnb');
   });
 });

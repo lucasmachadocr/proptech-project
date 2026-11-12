@@ -5,18 +5,20 @@ import { LIVE_UNITS } from './liveListings';
 import { MADRID_PROJECT_SITES } from './sites';
 
 describe('live listings (real public flats in Madrid)', () => {
-  it('76 Spotahome 1-bedroom listings, each with a public link and a plausible price', () => {
-    expect(LIVE_UNITS).toHaveLength(76);
+  it('132 public listings from Spotahome, Airbnb and Booking.com, each with its source and a plausible price', () => {
+    expect(LIVE_UNITS).toHaveLength(132);
+    const url = { Spotahome: /^https:\/\/www\.spotahome\.com\/madrid\/for-rent:apartments\/\d+$/, Airbnb: /^https:\/\/www\.airbnb\.com\/rooms\/\d+$/, 'Booking.com': /^https:\/\/www\.booking\.com\/hotel\/es\/[a-z0-9-]+\.html$/ };
     for (const u of LIVE_UNITS) {
       expect(u.city).toBe('Madrid');
       expect(u.status).toBe('public');
-      expect(u.sourceUrl).toMatch(/^https:\/\/www\.spotahome\.com\/madrid\/for-rent:apartments\/\d+$/);
+      expect(u.sourceUrl).toMatch(url[u.source as keyof typeof url]);
       expect(u.rent).toBeGreaterThanOrEqual(800);
-      expect(u.rent).toBeLessThanOrEqual(5000);
-      expect(u.lat).toBeGreaterThan(40.3);
+      expect(u.rent).toBeLessThanOrEqual(9000);
+      expect(u.lat).toBeGreaterThan(40.15);
       expect(u.lat).toBeLessThan(40.6);
     }
-    expect(new Set(LIVE_UNITS.map((u) => u.id)).size).toBe(76);
+    expect(new Set(LIVE_UNITS.map((u) => u.id)).size).toBe(132);
+    expect(LIVE_UNITS.filter((u) => u.type === '2bed').length).toBeGreaterThanOrEqual(20); // families
   });
 
   it('builds three plans for 10 engineers at the San Fernando de Henares site', () => {
@@ -35,5 +37,18 @@ describe('live listings (real public flats in Madrid)', () => {
   it('a site placed anywhere in Madrid works too (Valdebebas)', () => {
     const brief = { ...LIVE_BRIEF, site: MADRID_PROJECT_SITES[1] };
     expect(allocate(brief, LIVE_UNITS).assignments).toHaveLength(10);
+  });
+});
+
+describe('personal requirements in a live plan', () => {
+  it('a family gets 2 bedrooms, an executive a bigger budget, a near-site engineer a short commute', () => {
+    const team = LIVE_BRIEF.employees.map((e, i) =>
+      i === 0 ? { ...e, need: 'Family', household: { adults: 2, children: 1 }, budgetCap: 3500 } : i === 1 ? { ...e, need: 'Executive', budgetCap: 3500 } : i === 2 ? { ...e, need: 'Closer', maxCommuteMin: 18 } : e,
+    );
+    const plan = allocate({ ...LIVE_BRIEF, employees: team }, LIVE_UNITS);
+    const unit = (empId: string) => LIVE_UNITS.find((u) => u.id === plan.assignments.find((a) => a.employeeId === empId)!.unitId)!;
+    expect(plan.unassigned).toHaveLength(0);
+    expect(unit(team[0].id).type).toBe('2bed');
+    expect(plan.assignments.find((a) => a.employeeId === team[2].id)!.commuteMin).toBeLessThanOrEqual(18);
   });
 });

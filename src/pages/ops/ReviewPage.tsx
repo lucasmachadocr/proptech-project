@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DEFAULT_LAMBDA, LAMBDA_CLOSEST, LAMBDA_LOWEST_COST, allocate } from '../../ai/allocate';
 import { checkLease } from '../../ai/compliance';
 import CityMap from '../../components/CityMap';
+import PlanExplorer from '../../components/PlanExplorer';
 import { AiBadge, Badge, Explain, LinkButton, cx } from '../../components/ui';
 import { companyById } from '../../data/companies';
 import { FACTS } from '../../data/facts';
@@ -20,10 +21,15 @@ export default function ReviewPage() {
   const { brief, plan, units, reviewedAt, releasePlan, choosePlan, demoStep, setDemoStep, flex, mode } = useStore();
   const live = mode === 'live';
   const [preview, setPreview] = useState<'A' | 'B' | 'C'>('B');
+  // Live mode: HR can ask for plans from one marketplace only (Airbnb, Booking.com, Spotahome).
+  const [source, setSource] = useState<string>('all');
+  const sources = useMemo(() => [...new Set(units.map((u) => u.source).filter(Boolean))] as string[], [units]);
+  const pool = useMemo(() => (source === 'all' ? units : units.filter((u) => u.source === source)), [units, source]);
   const options = useMemo(() => {
     if (!plan) return null;
-    return { A: allocate(brief, units, { lambda: LAMBDA_LOWEST_COST }), B: plan, C: allocate(brief, units, { lambda: LAMBDA_CLOSEST }) } as Record<'A' | 'B' | 'C', Plan>;
-  }, [plan, brief, units]);
+    const B = source === 'all' ? plan : allocate(brief, pool, { lambda: DEFAULT_LAMBDA });
+    return { A: allocate(brief, pool, { lambda: LAMBDA_LOWEST_COST }), B, C: allocate(brief, pool, { lambda: LAMBDA_CLOSEST }) } as Record<'A' | 'B' | 'C', Plan>;
+  }, [plan, brief, units, pool, source]);
 
   if (!plan) {
     return (
@@ -49,7 +55,7 @@ export default function ReviewPage() {
   const checks = [
     { ok: cp.unassigned.length === 0, text: `Everyone housed (${cp.assignments.length} of ${brief.employees.length})` },
     live
-      ? { ok: true, text: `Real public listings (${units[0]?.source ?? 'Spotahome'}). Settle In verifies each flat before signing` }
+      ? { ok: true, text: `Real public listings (${source === 'all' ? sources.join(', ') : source}). Settle In verifies each flat before signing` }
       : { ok: planUnits.every((u) => u.status === 'verified'), text: 'Only verified apartments (KYC, Catastro, photos, price)' },
     { ok: cp.assignments.every((a) => a.commuteMin <= brief.maxCommuteMin), text: `Every commute ≤ ${brief.maxCommuteMin} min (max ${Math.round(cp.metrics.maxCommuteMin)} min)` },
     { ok: cp.assignments.every((a) => a.rent <= brief.budgetCaps[brief.employees.find((e) => e.id === a.employeeId)!.role]), text: 'Every apartment within budget' },
@@ -79,6 +85,24 @@ export default function ReviewPage() {
             : `The AI compared three ways to house the team in ${plan.computedMs} ms. A person reviews the recommended one and releases it.`}
         </p>
       </div>
+
+      {live && (
+        <div className="flex flex-wrap items-center gap-2 text-sm" role="radiogroup" aria-label="Listings from" data-testid="source-filter">
+          <span className="text-stone-600">Flats from:</span>
+          {['all', ...sources].map((s) => (
+            <button
+              key={s}
+              type="button"
+              role="radio"
+              aria-checked={source === s}
+              onClick={() => setSource(s)}
+              className={cx('rounded-full px-3 py-1.5 font-medium', source === s ? 'bg-ink text-white' : 'bg-white text-ink ring-1 ring-stone-300 hover:ring-ink')}
+            >
+              {s === 'all' ? `All (${units.length})` : `${s} (${units.filter((u) => u.source === s).length})`}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Options" data-testid="plan-options">
         {(['A', 'B', 'C'] as const).map((k) => {
@@ -114,7 +138,7 @@ export default function ReviewPage() {
         <Explain label="How are the options built?">Same team, same rules, three priorities: A ignores commute and minimises cost, C minimises commute, B balances both (€{DEFAULT_LAMBDA} of value per commute minute).</Explain>
       </p>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+      <div className={live ? 'max-w-2xl' : 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]'}>
         <section className="rounded-2xl border border-stone-200 bg-white p-6" data-testid="review-queue">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -166,8 +190,16 @@ export default function ReviewPage() {
           </button>
         </section>
 
-        <CityMap city={site.city} chosen={chosen} height={420} showZones={false} site={site} />
+        {!live && <CityMap city={site.city} chosen={chosen} height={420} showZones={false} site={site} />}
       </div>
+      {live && (
+        <section aria-label={`Flats in option ${preview}`} className="space-y-3">
+          <h2 className="text-lg font-semibold text-ink">
+            Option {preview}: the {shown.assignments.length} flats, on the map
+          </h2>
+          <PlanExplorer brief={brief} site={site} assignments={shown.assignments} units={units} />
+        </section>
+      )}
     </div>
   );
 }

@@ -1,0 +1,21 @@
+# Public Booking.com apartments, Madrid, price for 30 nights from 18 Jan 2027 (collected 12 Nov 2026).
+# Exact address and coordinates as published by Booking.com.
+# id|page|€/30 nights|bedrooms (0 = studio)|m²|address|lat|lng
+10338834|charming-latina-center|2035|1|28|3 Calle de la Ruda|40.41030|-3.70758
+10541574|calle-tesoro-31|3293|1|30|31 Calle del Tesoro|40.42491|-3.70627
+15171384|refugio-luminoso-junto-a-gran-via|3569|1|33|Calle de la Ballesta 7|40.42167|-3.70363
+1736268|oriente-suites|2737|0|25|Calle Escalinata 4|40.41710|-3.70925
+5252099|rentalis-gran-via-luna|3545|1|45|Calle de la Luna|40.42233|-3.70614
+4225310|los-flamencos-malasana-madrid|2635|0|45|Calle del Barco|40.42301|-3.70232
+2434223|casa-malasana|8633|2|80|Calle Acuerdo|40.42599|-3.70849
+15111835|ballesta-cool-spot|3575|1|16|Calle de la Ballesta|40.42155|-3.70351
+9235743|la-maja-3|3066|1||26 Calle de Lavapiés|40.41074|-3.70275
+5478073|apartamentos-principe-madrid|5930|1|47|7 Calle del Príncipe|40.41604|-3.70019
+17281713|renovated-studio-with-terrace-chueca|3634|1|30|Plaza de Pedro Zerolo 2|40.42124|-3.69992
+15112036|luminoso-atico-en-lo-alto-de-la-ciudad|5509|2|60|Calle de la Ballesta|40.42155|-3.70351
+3856475|rentalis-gran-via-callao-madrid|4444|1|35|Calle de Leganitos|40.42120|-3.70962
+3875363|rentalis-prado|4508|2|70|Calle de Almadén|40.41102|-3.69438
+4019293|brand-new-apartment-next-to-gran-via-centre|3975|1|45|Calle de Valverde|40.42298|-3.70154
+5661331|unbeatable-views-of-puerta-del-sol-calle-mayor|6779|2|70|Calle Mayor|40.41646|-3.70467
+10041672|brigth-stylish-2bedrooms-2bathrooms-malasana|6314|2|80|Calle Acuerdo 10|40.42659|-3.70819
+3877348|sofia-madflats-collection|2666|1|50|Calle Argumosa|40.40819|-3.69994

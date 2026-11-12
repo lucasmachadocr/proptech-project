@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { llm } from '../../ai/llm';
-import CityMap, { ListingLink } from '../../components/CityMap';
+import CityMap from '../../components/CityMap';
+import PlanExplorer from '../../components/PlanExplorer';
 import { AiBadge, Badge, Explain, Kpi, LinkButton } from '../../components/ui';
 import { FACTS } from '../../data/facts';
 import { providerById } from '../../data/providers';
@@ -17,7 +18,7 @@ export default function PlanPage() {
   const { brief, plan, units, reviewedAt, approvedAt, approvePlan, flex, setFlex, demoStep, mode } = useStore();
   const live = mode === 'live';
   const [summary, setSummary] = useState('');
-  const [showList, setShowList] = useState(live);
+  const [showList, setShowList] = useState(false);
   const [agreed, setAgreed] = useState(false); // live: the Sign step
 
   useEffect(() => {
@@ -108,12 +109,14 @@ export default function PlanPage() {
         <Explain label="What is Flex?">An optional add-on of {pct(FACTS.pricing.flex)} of rent, shown as its own line on the invoice. Half is Settle In revenue, half goes to an operator pool.</Explain>
       </label>
 
-      <CityMap city={site.city} chosen={chosen} height={440} showZones={false} site={site} />
+      {live ? <PlanExplorer brief={brief} site={site} assignments={plan.assignments} units={units} /> : <CityMap city={site.city} chosen={chosen} height={440} showZones={false} site={site} />}
 
       <div className="flex flex-wrap gap-3">
+{!live && (
         <button type="button" onClick={() => setShowList(!showList)} className="rounded-full px-4 py-2 text-sm font-medium ring-1 ring-stone-300 hover:ring-ink" aria-expanded={showList}>
           {showList ? 'Hide the list' : 'Show who lives where'}
         </button>
+        )}
         <details className="rounded-2xl text-sm">
           <summary className="cursor-pointer rounded-full px-4 py-2 font-medium ring-1 ring-stone-300 hover:ring-ink">
             Why this plan? <AiBadge />
@@ -141,7 +144,6 @@ export default function PlanPage() {
                   {eur(a.rent)}/mo · {u.source ?? providerById(u.providerId).name}
                   {u.approxLocation ? ' · approx. location' : ''}
                 </div>
-                {u.sourceUrl && <ListingLink unit={u} />}
               </li>
             );
           })}

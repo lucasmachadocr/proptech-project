@@ -42,7 +42,7 @@ export function allowedTypes(emp: Employee, brief: Brief): UnitType[] {
   if (children >= 2) [min, max] = ['3bed', '3bed'];
   else if (children === 1) [min, max] = ['2bed', '3bed'];
   else if (adults >= 2) [min, max] = ['1bed', '2bed'];
-  const policyMin = brief.minUnitType[emp.role];
+  const policyMin = emp.minType && TYPE_RANK[emp.minType] > TYPE_RANK[brief.minUnitType[emp.role]] ? emp.minType : brief.minUnitType[emp.role];
   const lo = Math.max(TYPE_RANK[min], TYPE_RANK[policyMin]);
   const hi = Math.max(TYPE_RANK[max], TYPE_RANK[policyMin]);
   return TYPES.filter((t) => TYPE_RANK[t] >= lo && TYPE_RANK[t] <= hi);
@@ -64,9 +64,9 @@ export function checkUnit(emp: Employee, unit: Unit, brief: Brief): Feasibility 
   // Live mode plans from public listings ('public'); Settle In verifies each one before signing.
   if (unit.status !== 'verified' && unit.status !== 'public') return { ok: false, fail: 'unverified', commute };
   if (!allowedTypes(emp, brief).includes(unit.type)) return { ok: false, fail: 'type', commute };
-  if (unit.rent > brief.budgetCaps[emp.role]) return { ok: false, fail: 'budget', commute };
+  if (unit.rent > (emp.budgetCap ?? brief.budgetCaps[emp.role])) return { ok: false, fail: 'budget', commute };
   if (unit.availableFrom > start || unit.availableTo < end) return { ok: false, fail: 'availability', commute };
-  if (commute > brief.maxCommuteMin) return { ok: false, fail: 'commute', commute };
+  if (commute > (emp.maxCommuteMin ?? brief.maxCommuteMin)) return { ok: false, fail: 'commute', commute };
   return { ok: true, commute };
 }
 
