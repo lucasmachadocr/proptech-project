@@ -8,8 +8,13 @@
       :root { --cream: #f7eee7; --ink: #2a2320; --terra: #c4573d; --peach: #e9a08e; --taupe: #6e6059; }
       * { box-sizing: border-box; margin: 0; }
       html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--cream); font-family: 'Avenir Next', Avenir, 'Helvetica Neue', system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: var(--ink); }
-      #map, #office { position: absolute; inset: 0; }
+      #map, #office, #meeting { position: absolute; inset: 0; }
       #office { z-index: 2; }
+      #meeting { z-index: 3; }
+      .flat { position: absolute; z-index: 6; transform: translateX(-50%); padding: 12px 20px; border-radius: 16px; background: #fffdfb; box-shadow: 0 12px 32px rgba(42, 35, 32, 0.2); text-align: center; white-space: nowrap; }
+      .flat b { display: block; font-size: 26px; font-weight: 800; }
+      .flat span { font-size: 18px; font-weight: 600; color: var(--terra); }
+      .flat::after { content: ""; position: absolute; left: 50%; bottom: -10px; margin-left: -10px; border: 10px solid transparent; border-bottom: 0; border-top-color: #fffdfb; }
       .maplibregl-ctrl-attrib, .maplibregl-ctrl-logo { display: none !important; }
       #attrib { position: absolute; right: 18px; bottom: 10px; z-index: 9; font-size: 13px; color: rgba(42, 35, 32, 0.45); }
       #cap { position: absolute; left: 96px; bottom: 92px; z-index: 8; max-width: 900px; }
@@ -48,13 +53,15 @@
   <body>
     <div id="map"></div>
     <canvas id="office"></canvas>
+    <canvas id="meeting"></canvas>
+    <div class="flat" id="flat"></div>
     <div class="capbg" id="capbg"></div>
     <div id="cap"><p class="eye" id="eye"></p><h1 id="title"></h1></div>
     <div id="rect"><div class="bar"><i></i><i></i><i></i><b>Settle In app</b></div><img id="rectimg" alt="" /></div>
     <div class="badge" id="clock"></div>
     <div class="badge" id="seal"></div>
     <div id="cities"></div>
-    <ol id="steps"><li>1 Brief</li><li>2 Plan</li><li>3 Approve</li><li>4 Live</li><li>5 Re-plan</li></ol>
+    <ol id="steps"><li>1 Brief</li><li>2 Plan</li><li>3 Approve</li><li>4 Move in</li><li>5 Re-plan</li></ol>
     <div id="end">
       <p class="line" id="endline"></p>
       <div class="logo">
