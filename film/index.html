@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Settle In · experience film</title>
+    <meta name="viewport" content="width=1920, initial-scale=1" />
+    <style>
+      :root { --cream: #f7eee7; --ink: #2a2320; --terra: #c4573d; --peach: #e9a08e; --taupe: #6e6059; }
+      * { box-sizing: border-box; margin: 0; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--cream); font-family: 'Avenir Next', Avenir, 'Helvetica Neue', system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: var(--ink); }
+      #map, #office { position: absolute; inset: 0; }
+      #office { z-index: 2; }
+      .maplibregl-ctrl-attrib, .maplibregl-ctrl-logo { display: none !important; }
+      #attrib { position: absolute; right: 18px; bottom: 10px; z-index: 9; font-size: 13px; color: rgba(42, 35, 32, 0.45); }
+      #cap { position: absolute; left: 96px; bottom: 92px; z-index: 8; max-width: 900px; }
+      #cap .eye { font-weight: 800; font-size: 18px; letter-spacing: 6px; text-transform: uppercase; color: var(--terra); margin-bottom: 14px; }
+      #cap h1 { font-weight: 800; font-size: 60px; line-height: 1.06; letter-spacing: -1.4px; }
+      #cap h1 span { color: var(--terra); }
+      #cap.on-dark { color: var(--cream); }
+      #cap.on-dark h1 span { color: var(--peach); }
+      .capbg { position: absolute; left: 0; right: 0; bottom: 0; height: 420px; z-index: 7; background: linear-gradient(to top, rgba(247, 238, 231, 0.96) 0%, rgba(247, 238, 231, 0.75) 45%, rgba(247, 238, 231, 0) 100%); pointer-events: none; }
+      #rect { position: absolute; right: 64px; bottom: 64px; z-index: 8; width: 736px; border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 24px 60px rgba(42, 35, 32, 0.28), 0 0 0 1px rgba(42, 35, 32, 0.08); }
+      #rect .bar { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; background: #fbf7f3; border-bottom: 1px solid #eee3da; font-size: 14px; font-weight: 700; color: var(--taupe); }
+      #rect .bar i { width: 10px; height: 10px; border-radius: 50%; background: #e2d6cc; }
+      #rect .bar b { margin-left: 8px; color: var(--ink); }
+      #rect img { display: block; width: 736px; height: 414px; object-fit: cover; }
+      .badge { position: absolute; z-index: 8; padding: 12px 22px; border-radius: 40px; font-weight: 800; font-size: 26px; background: var(--ink); color: var(--cream); box-shadow: 0 12px 30px rgba(42, 35, 32, 0.25); }
+      .badge em { font-style: normal; color: var(--peach); }
+      #clock { left: 96px; top: 80px; }
+      #seal { left: 96px; top: 80px; background: var(--terra); }
+      .city { position: absolute; z-index: 6; transform: translate(-50%, -100%); text-align: center; }
+      .city b { display: block; font-size: 30px; font-weight: 800; }
+      .city span { display: inline-block; margin-top: 4px; font-size: 17px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: var(--terra); }
+      .city.launch span { background: var(--terra); color: var(--cream); padding: 4px 10px; border-radius: 20px; }
+      #end { position: absolute; inset: 0; z-index: 10; background: var(--terra); color: var(--cream); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+      #end .logo { display: flex; align-items: center; gap: 24px; }
+      #end .logo b { font-size: 96px; font-weight: 800; letter-spacing: -2px; }
+      #end h2 { font-size: 44px; font-weight: 600; margin-top: 28px; }
+      #end p { margin-top: 44px; font-size: 28px; font-weight: 700; padding: 12px 28px; border: 2px solid rgba(247, 238, 231, 0.6); border-radius: 40px; }
+      #steps { position: absolute; left: 50%; top: 44px; z-index: 9; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; list-style: none; border-radius: 40px; background: rgba(255, 253, 251, 0.92); box-shadow: 0 8px 24px rgba(42, 35, 32, 0.12); }
+      #steps li { padding: 9px 20px; border-radius: 30px; font-size: 19px; font-weight: 700; color: #9c8e87; transition: none; }
+      #steps li.done { color: var(--ink); }
+      #steps li.on { background: var(--ink); color: var(--cream); }
+      #end p.line { margin: 0 0 40px; padding: 0; border: none; font-size: 30px; font-weight: 800; letter-spacing: 1px; opacity: 0.9; }
+      #fade { position: absolute; inset: 0; z-index: 11; background: var(--cream); pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <canvas id="office"></canvas>
+    <div class="capbg" id="capbg"></div>
+    <div id="cap"><p class="eye" id="eye"></p><h1 id="title"></h1></div>
+    <div id="rect"><div class="bar"><i></i><i></i><i></i><b>Settle In app</b></div><img id="rectimg" alt="" /></div>
+    <div class="badge" id="clock"></div>
+    <div class="badge" id="seal"></div>
+    <div id="cities"></div>
+    <ol id="steps"><li>1 Brief</li><li>2 Plan</li><li>3 Approve</li><li>4 Live</li><li>5 Re-plan</li></ol>
+    <div id="end">
+      <p class="line" id="endline"></p>
+      <div class="logo">
+        <svg viewBox="0 0 48 56" width="104" height="122"><path d="M0 24a24 24 0 0 1 48 0v32H0z" fill="#F7EEE7" /><path d="M15 31a9 9 0 0 1 18 0v25H15z" fill="#C4573D" /><circle cx="24" cy="42" r="2.6" fill="#F7EEE7" /></svg>
+        <b>settle in</b>
+      </div>
+      <h2 id="tagline"></h2>
+      <p>settle-in-app.netlify.app</p>
+    </div>
+    <div id="attrib">© OpenStreetMap contributors · OpenFreeMap · Demo data</div>
+    <div id="fade"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
