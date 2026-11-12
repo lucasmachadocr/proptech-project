@@ -14,3 +14,7 @@ netlify-deploy
 # Commercial recordings (npm run commercial:shots / npm run commercial)
 docs/commercial/*.webm
 docs/commercial/*.mp4
+
+# Experience film working files
+film/.frames/
+docs/commercial/storyboard/
