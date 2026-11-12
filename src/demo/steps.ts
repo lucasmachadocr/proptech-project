@@ -23,7 +23,7 @@ export const DEMO_STEPS: DemoStep[] = [
     n: 1,
     key: 'brief',
     title: 'Brief',
-    say: 'A company needs 20 engineers in Madrid for 6 months. Instead of 20 searches, it sends one brief: who, where, how long, budget.',
+    say: 'A company needs 20 engineers in Madrid for 6 months. Instead of 20 searches, it sends one brief. HR can paste the request as written: a language model running in the browser reads who, where, how long and the budget.',
     run: () => {
       useStore.getState().setBrief(DEMO_BRIEF);
       return '/client/brief';

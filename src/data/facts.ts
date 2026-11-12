@@ -1,4 +1,5 @@
 // Single source of numbers for the MVP. Mirrors SETTLE_IN_FACTS.md (checked by facts.test.ts).
+// Financial figures follow the financial model (Excel, version 2).
 
 export const FACTS = {
   brand: {
@@ -37,8 +38,9 @@ export const FACTS = {
     companyPays: 239034,
     revenue: 24805,
     flexPool: 2255,
-    directCostPerApartmentMonth: 36.4,
-    directCost: 4368,
+    directCostPerApartmentMonth: 32.0773,
+    directCost: 3849,
+    contribution: 20956, // €175 per apartment-month, 84% of revenue
   },
   options: {
     A: { label: 'Lowest cost', pricePerApartmentMonth: 1935, avgCommuteMin: 31 },
@@ -48,12 +50,14 @@ export const FACTS = {
   replan: { people: 3, fromMonth: 3, months: 4, pricePerApartmentMonth: 1992, delta: 23904, apartmentsAfter: 23, moved: 0 },
   kpi: {
     briefToPlanHours: 48,
-    opsHoursPerMission: 38.5,
+    opsHoursAtLaunch: 60, // reference mission (20 people, 6 months) in month 1
+    opsHoursPerMission: 39, // same mission from month 12
     opsHoursManual: 182,
-    opsHoursSaving: 0.79, // 1 − 38.5 / 182
+    opsHoursSaving: 0.79, // 1 − 39 / 182
     apartmentsPerAgent: 150,
-    breakEvenApartments: 177, // occupied apartments, Madrid alone
-    breakEvenApartmentsFiveCities: 310, // with the five cities open (year 4)
+    breakEvenApartments: 286, // occupied apartments needed at year-1 economics (Madrid only, pilot pricing)
+    breakEvenApartmentsYear3: 284, // needed in year 3; the plan has 308 occupied, so year 3 is the first profitable year
+    occupiedApartmentsYear3: 308,
   },
   lease: { minDays: 31, maxMonths: 12, tenantExitAfterMonths: 1, exitNoticeDays: 10 },
   vatNote: 'VAT excluded on demo totals',

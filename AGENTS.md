@@ -12,8 +12,11 @@ This file mirrors CLAUDE.md. Keep both in sync when you change the rules.
   €239,034 (rent + 4% markup + 2% Flex) → Settle In revenue €24,805; Flex pool €2,255 is NOT revenue.
   Options A/B/C = €1,935/31 min · €1,992/22 min · €2,140/12 min. Re-plan = +3 engineers from month 3 =
   +€23,904, nobody moves, 23 apartments (4% tier).
-- Static only: no backend, no API keys. Phase-2 LLM goes behind `src/ai/llm.ts` (`LlmClient`).
-- "AI" = local deterministic engines in `src/ai/`. Every AI output in the UI carries `<AiBadge />`.
+- Static only: no backend, no API keys. The hosted LLM of phase 2 goes behind `src/ai/llm.ts` (`LlmClient`).
+- "AI" = engines in `src/ai/`. One is a real language model: the brief reader (`briefReader.ts`,
+  DistilBERT through transformers.js, downloaded by the browser on first use, rule parser as fallback).
+  The others are deterministic (optimiser, rule engines). Every AI output in the UI carries `<AiBadge />`
+  and `/about-tech` says which technique each one uses. Never label a rule as a model.
 - Minimal UX: one idea and one primary button per screen; numbers get an `<Explain>` tooltip.
 - Brand: terracotta #C4573D · cream #F7EEE7 · ink #2A2320 (`src/index.css`, `brand-*` / `cream` / `ink`).
 - All seed data is fictional ("Demo data"). App name only in `src/config.ts`.

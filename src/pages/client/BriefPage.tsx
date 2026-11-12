@@ -2,10 +2,11 @@ import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CityMap, { CityChips } from '../../components/CityMap';
 import { AiBadge, inputCls, labelCls } from '../../components/ui';
+import { MODEL_LABEL, SAMPLE_REQUEST, readBrief, type BriefReading } from '../../ai/briefReader';
 import { DEMO_EMPLOYEES } from '../../data/brief';
 import { COMPANIES } from '../../data/companies';
 import { siteById, siteForCity } from '../../data/sites';
-import { eur } from '../../lib/format';
+import { eur, pct } from '../../lib/format';
 import { formatDate, stayEnd } from '../../lib/dates';
 import { useStore } from '../../store';
 import type { Brief, Employee, Role } from '../../types';
@@ -29,6 +30,14 @@ export function parseTeamCsv(text: string): Employee[] {
   });
 }
 
+/** Team list for a head-count read from the request: demo names first, then numbered placeholders. */
+export function teamOf(n: number): Employee[] {
+  return Array.from({ length: n }, (_, i) => DEMO_EMPLOYEES[i] ?? { id: `E${String(i + 1).padStart(2, '0')}`, name: `Engineer ${i + 1}`, role: 'engineer' as Role, title: 'Engineer', household: { adults: 1, children: 0 } });
+}
+
+const shown = (r: BriefReading['fields'][number]) =>
+  r.value === null ? 'not stated' : r.key === 'start' ? formatDate(String(r.value)) : r.key === 'months' ? `${r.value} months` : r.key === 'maxCommuteMin' ? `${r.value} min` : r.key === 'budget' ? `${eur(Number(r.value))}/mo` : String(r.value);
+
 export default function BriefPage() {
   const navigate = useNavigate();
   const { brief, setBrief, runAllocation, demoStep, setDemoStep } = useStore();
@@ -38,6 +47,28 @@ export default function BriefPage() {
   const company = COMPANIES.find((c) => c.id === draft.companyId)!;
   const city = siteById(draft.siteId).city;
   const update = <K extends keyof Brief>(k: K, v: Brief[K]) => setDraft((d) => ({ ...d, [k]: v }));
+
+  const [request, setRequest] = useState('');
+  const [reading, setReading] = useState<BriefReading | null>(null);
+  const [load, setLoad] = useState<number | null>(null);
+
+  const read = async () => {
+    setReading(null);
+    setLoad(0);
+    const r = await readBrief(request, (p) => setLoad(p.ratio));
+    setLoad(null);
+    setReading(r);
+    const v = Object.fromEntries(r.fields.map((f) => [f.key, f.value]));
+    setDraft((d) => ({
+      ...d,
+      employees: typeof v.people === 'number' ? teamOf(v.people) : d.employees,
+      siteId: typeof v.city === 'string' ? siteForCity(v.city as Parameters<typeof siteForCity>[0]).id : d.siteId,
+      start: typeof v.start === 'string' ? v.start : d.start,
+      months: typeof v.months === 'number' ? v.months : d.months,
+      maxCommuteMin: typeof v.maxCommuteMin === 'number' ? v.maxCommuteMin : d.maxCommuteMin,
+      budgetCaps: typeof v.budget === 'number' ? { ...d.budgetCaps, engineer: v.budget, technician: v.budget } : d.budgetCaps,
+    }));
+  };
 
   const onFile = (f?: File) => {
     if (!f) return;
@@ -64,7 +95,63 @@ export default function BriefPage() {
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">One brief for the whole team</h1>
         <p className="mt-3 text-lg text-stone-600">Tell us who is coming, where and for how long. We do the rest.</p>
 
-        <dl className="mt-8 grid grid-cols-2 gap-4" data-testid="brief-summary">
+
+        <div className="mt-6 rounded-2xl border border-stone-200 bg-white p-5" data-testid="brief-reader">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold text-ink">Paste the request as HR wrote it</h2>
+            <button type="button" className="text-sm text-stone-600 underline" onClick={() => setRequest(SAMPLE_REQUEST)} data-testid="brief-sample">
+              Use a sample email
+            </button>
+          </div>
+          <textarea
+            className={`${inputCls} mt-3 h-28 resize-y`}
+            aria-label="Housing request in plain text"
+            placeholder="We need to house 20 engineers in Madrid from 1 December for six months…"
+            value={request}
+            onChange={(e) => setRequest(e.target.value)}
+            data-testid="brief-request"
+          />
+          <button
+            type="button"
+            onClick={read}
+            disabled={load !== null || request.trim().length < 20}
+            className="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ring-1 ring-brand-700 text-brand-800 hover:bg-brand-50 disabled:text-stone-400 disabled:ring-stone-300"
+            data-testid="brief-read"
+          >
+            {load !== null ? `Loading the language model… ${pct(load)}` : 'Read the request'} <AiBadge title={`Read by a language model that runs in this browser: ${MODEL_LABEL}`} />
+          </button>
+          {load !== null && <p className="mt-2 text-xs text-stone-500">First use downloads the model (about 65 MB). After that it is cached and works offline.</p>}
+          {reading && (
+            <div className="mt-4" data-testid="brief-reading">
+              <p className="text-xs text-stone-500" data-testid="brief-engine">
+                {reading.engine === 'model' ? `Read by ${MODEL_LABEL}, in ${reading.ms} ms. Nothing left this device.` : reading.note}
+              </p>
+              <table className="mt-2 w-full text-sm">
+                <thead className="text-left text-xs text-stone-500">
+                  <tr>
+                    <th className="py-1 font-medium">Field</th>
+                    <th className="py-1 font-medium">Value</th>
+                    <th className="py-1 font-medium">Read from</th>
+                    <th className="py-1 text-right font-medium">Confidence</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {reading.fields.map((f) => (
+                    <tr key={f.key}>
+                      <td className="py-1.5 text-stone-600">{f.label}</td>
+                      <td className="py-1.5 font-semibold text-ink">{shown(f)}</td>
+                      <td className="py-1.5 text-stone-500">{f.evidence ? `“${f.evidence}”` : ''}</td>
+                      <td className="num py-1.5 text-right text-stone-600">{f.value === null ? '' : f.by === 'model' ? pct(f.score) : 'rule'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="mt-2 text-xs text-stone-500">The fields below are filled in. Check them, then build the plan. A person approves every plan.</p>
+            </div>
+          )}
+        </div>
+
+        <dl className="mt-6 grid grid-cols-2 gap-4" data-testid="brief-summary">
           <Fact label="Who" value={`${draft.employees.length} engineers`} />
           <Fact label="Where" value={siteById(draft.siteId).town} />
           <Fact label="How long" value={`${draft.months} months`} sub={`${formatDate(draft.start)} → ${formatDate(stayEnd(draft.start, draft.months))}`} />

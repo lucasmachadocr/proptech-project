@@ -94,3 +94,16 @@ test('employee WhatsApp chat triages an urgent issue with a 2 h SLA', async ({ p
   await expect(page.getByTestId('triage-result')).toContainText('URGENT');
   await expect(page.getByTestId('triage-result')).toContainText('SLA 2 h');
 });
+
+test('brief reader fills the brief from a pasted request (language model, or rule parser when offline)', async ({ page }) => {
+  test.setTimeout(240_000);
+  await home(page);
+  await page.getByTestId('start-demo').click();
+  await page.getByTestId('brief-sample').click();
+  await page.getByTestId('brief-read').click();
+  const reading = page.getByTestId('brief-reading');
+  await expect(reading).toBeVisible({ timeout: 200_000 });
+  await expect(reading).toContainText('6 months');
+  await expect(reading).toContainText('€2,200/mo');
+  await expect(page.getByTestId('brief-summary')).toContainText('20 engineers');
+});

@@ -1,6 +1,6 @@
 # SETTLE_IN_FACTS — single source of numbers for the MVP
 
-Source: business plan **(November 2026 version)** and the financial model (Excel). Every number shown in the app comes from this table.
+Source: business plan **(November 2026 version)** and the financial model (Excel, **version 2**). Where the two differ, the Excel wins. Every number shown in the app comes from this table.
 
 `src/data/facts.ts` mirrors the table below. `src/data/facts.test.ts` fails if a value drifts.
 To change a number, edit this table and `facts.ts` together.
@@ -35,8 +35,9 @@ To change a number, edit this table and `facts.ts` together.
 | demo.companyPays | 239034 | v11 | rent + 4% markup + 2% Flex (VAT excluded) |
 | demo.revenue | 24805 | v11 | 6% + 4% + 1 pt Flex of rent |
 | demo.flexPool | 2255 | derived | 1% of rent |
-| demo.directCostPerApartmentMonth | 36.4 | BP Nov 2026 | shown as about €36 in the plan |
-| demo.directCost | 4368 | derived | 36.4 × 120 |
+| demo.directCostPerApartmentMonth | 32.0773 | Excel v2 | support 14.43 + AI and platform 4.00 + payments 0.50 per apartment-month; €43 per new flat; credit insurance 0.3% of what the company pays |
+| demo.directCost | 3849 | derived | 120 × 18.93 + 20 × 43 + 0.3% × 239,034 |
+| demo.contribution | 20956 | derived | 24,805 − 3,849 (€175 per apartment-month) |
 | options.A | 1935 / 31 | v11 | lowest cost: € per apartment-month (all-in) / average commute min |
 | options.B | 1992 / 22 | v11 | balanced — recommended and released |
 | options.C | 2140 / 12 | v11 | closest |
@@ -48,12 +49,14 @@ To change a number, edit this table and `facts.ts` together.
 | replan.apartmentsAfter | 23 | v11 | still the 4% tier (10–24) |
 | replan.moved | 0 | v11 | nobody already housed moves |
 | kpi.briefToPlanHours | 48 | v11 | target, at most |
-| kpi.opsHoursPerMission | 38.5 | v11 | ops hours per mission with Settle In |
+| kpi.opsHoursAtLaunch | 60 | Excel v2 | ops hours for the reference mission in month 1 |
+| kpi.opsHoursPerMission | 39 | Excel v2 | ops hours for the reference mission from month 12 |
 | kpi.opsHoursManual | 182 | v11 | ops hours per mission done by hand |
-| kpi.opsHoursSaving | 0.79 | derived | 1 − 38.5 ÷ 182 ≈ −79% |
+| kpi.opsHoursSaving | 0.79 | derived | 1 − 39 ÷ 182 ≈ −79% |
 | kpi.apartmentsPerAgent | 150 | v11 | 1 support agent per 150 apartments |
-| kpi.breakEvenApartments | 177 | BP Nov 2026 | occupied apartments at break-even, Madrid alone |
-| kpi.breakEvenApartmentsFiveCities | 310 | BP Nov 2026 | with the five cities open (year 4) |
+| kpi.breakEvenApartments | 286 | Excel v2 | occupied apartments needed at year-1 economics (Madrid only, pilot pricing) |
+| kpi.breakEvenApartmentsYear3 | 284 | Excel v2 | needed in year 3, with five cities |
+| kpi.occupiedApartmentsYear3 | 308 | Excel v2 | monthly average in year 3: first year with positive EBITDA |
 | lease.minDays | 31 | v11 | more than 31 days |
 | lease.maxMonths | 12 | v11 | |
 | lease.tenantExitAfterMonths | 1 | RDL 29/2026 | tenant may leave after 1 month (LAU art. 11.2) |
@@ -68,5 +71,5 @@ To change a number, edit this table and `facts.ts` together.
 - Settle In revenue: 225,504 × (0.06 + 0.04 + 0.01) = 24,805.44 → **€24,805**
 - Flex pool (operators): 225,504 × 0.01 = **€2,255**
 - Operator payout: 225,504 × 0.94 = **€211,974**, plus the Flex pool
-- Direct cost: 120 × €36.40 = **€4,368**; contribution = 24,805 − 4,368 = **€20,437** (€170 per apartment-month)
+- Direct cost: 120 × €18.93 + 20 × €43 + 0.3% × 239,034 = **€3,849**; contribution = 24,805 − 3,849 = **€20,956** (€175 per apartment-month)
 - Re-plan: 3 engineers × €1,992 × 4 months = **+€23,904**; 23 apartments → still 4% tier

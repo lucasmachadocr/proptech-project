@@ -37,7 +37,7 @@ describe('pricing v11', () => {
     expect(operatorPayout(1000)).toBe(940);
   });
 
-  it('direct cost €36.40 per apartment-month → €4,368 for the demo', () => {
+  it('direct cost about €32 per apartment-month → €3,849 for the demo', () => {
     expect(directCost(D.apartmentMonths)).toBe(D.directCost);
   });
 

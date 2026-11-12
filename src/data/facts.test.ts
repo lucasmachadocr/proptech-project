@@ -32,7 +32,7 @@ describe('SETTLE_IN_FACTS.md ↔ facts.ts', () => {
   });
 
   it('demo case and KPIs', () => {
-    for (const k of ['people', 'months', 'apartmentMonths', 'rentPerApartmentMonth', 'rentTotal', 'markupRate', 'companyPays', 'revenue', 'flexPool', 'directCostPerApartmentMonth', 'directCost'] as const) {
+    for (const k of ['people', 'months', 'apartmentMonths', 'rentPerApartmentMonth', 'rentTotal', 'markupRate', 'companyPays', 'revenue', 'flexPool', 'directCostPerApartmentMonth', 'directCost', 'contribution'] as const) {
       expect(num(`demo.${k}`), k).toBe(FACTS.demo[k]);
     }
     for (const k of ['A', 'B', 'C'] as const) {
@@ -43,15 +43,19 @@ describe('SETTLE_IN_FACTS.md ↔ facts.ts', () => {
     }
     expect(num('kpi.briefToPlanHours')).toBe(FACTS.kpi.briefToPlanHours);
     expect(num('kpi.opsHoursPerMission')).toBe(FACTS.kpi.opsHoursPerMission);
+    expect(num('kpi.opsHoursAtLaunch')).toBe(FACTS.kpi.opsHoursAtLaunch);
     expect(num('kpi.opsHoursManual')).toBe(FACTS.kpi.opsHoursManual);
     expect(num('kpi.opsHoursSaving')).toBe(FACTS.kpi.opsHoursSaving);
     expect(Math.round((1 - FACTS.kpi.opsHoursPerMission / FACTS.kpi.opsHoursManual) * 100)).toBe(79);
     expect(num('kpi.apartmentsPerAgent')).toBe(FACTS.kpi.apartmentsPerAgent);
     expect(num('kpi.breakEvenApartments')).toBe(FACTS.kpi.breakEvenApartments);
-    expect(num('kpi.breakEvenApartmentsFiveCities')).toBe(FACTS.kpi.breakEvenApartmentsFiveCities);
+    expect(num('kpi.breakEvenApartmentsYear3')).toBe(FACTS.kpi.breakEvenApartmentsYear3);
+    expect(num('kpi.occupiedApartmentsYear3')).toBe(FACTS.kpi.occupiedApartmentsYear3);
     expect(rows['rollout']).toBe(FACTS.cities.map((c) => `${c}: ${FACTS.rollout[c]}`).join('; '));
     expect(rows['launchOffer']).toBe(FACTS.launchOffer);
-    expect(FACTS.demo.revenue - FACTS.demo.directCost).toBe(20437);
+    expect(FACTS.demo.revenue - FACTS.demo.directCost).toBe(FACTS.demo.contribution);
+    // Direct cost rebuilt from the financial model's unit costs.
+    expect(Math.round(120 * (14.4347 + 4 + 0.5) + 20 * 43 + 0.003 * 239034.24)).toBe(FACTS.demo.directCost);
     expect(rows['vat']).toBe(FACTS.vatNote);
     expect(md).not.toMatch(/\| CONFIRM \|/);
     expect(num('lease.tenantExitAfterMonths')).toBe(FACTS.lease.tenantExitAfterMonths);
