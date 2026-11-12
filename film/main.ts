@@ -6,7 +6,10 @@
 import * as maplibregl from 'maplibre-gl';
 import type { GeoJSONSource, StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { CITY_POINTS, FACTS, MADRID_SITE, NEW_HOMES, OPTIONS, REPLAN, RINGS_MIN, chosen, madridUnits, ringKm } from './data';
+// Bundle MapLibre's worker with Vite and tell MapLibre where it is (works whatever node_modules is).
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+maplibregl.setWorkerUrl(workerUrl);
+import { CITY_POINTS, EUROPE, FACTS, MADRID_SITE, OPTIONS, RELEASED, REPLAN, RINGS_MIN, chosen, madridUnits, ringKm } from './data';
 import { createMeeting } from './meeting';
 import { createOffice } from './office';
 import { DEMO_BRIEF } from '../src/data/brief';
@@ -29,7 +32,8 @@ const APPROVED = 46.5;
 const MOVE_IN = [55, 64.4];
 const REPLAN_T = 64.4;
 const SPAIN = 73.6;
-const END = 83.4;
+const EUROPE_T = 81.4; // camera rises from Spain to Europe
+const END = 85;
 
 // ── Camera ───────────────────────────────────────────────────────────────
 type Cam = { t: number; lng: number; lat: number; zoom: number; pitch: number; bearing: number; ease?: boolean };
@@ -53,8 +57,10 @@ const KEYS: Cam[] = [
   { t: 64.4, ...H, zoom: 15.8, pitch: 64, bearing: 75 },
   { t: 67.4, ...NEAR, zoom: 11.5, pitch: 58, bearing: 55, ease: true },
   { t: SPAIN, ...NEAR, zoom: 11.5, pitch: 58, bearing: 70 },
-  { t: 78, lng: -2.2, lat: 39.75, zoom: 5.75, pitch: 30, bearing: 0, ease: true },
-  { t: 90, lng: -2.2, lat: 39.75, zoom: 5.8, pitch: 32, bearing: 3 },
+  { t: 77.4, lng: -2.2, lat: 39.75, zoom: 5.75, pitch: 34, bearing: -12, ease: true },
+  { t: EUROPE_T, lng: -1.4, lat: 40.0, zoom: 5.85, pitch: 42, bearing: 14 },
+  { t: 84.2, lng: 2.5, lat: 44.6, zoom: 4.25, pitch: 30, bearing: 6, ease: true },
+  { t: 90, lng: 2.6, lat: 44.8, zoom: 4.2, pitch: 30, bearing: 8 },
 ];
 function camAt(t: number) {
   const i = KEYS.findIndex((k) => k.t > t);
@@ -97,7 +103,7 @@ const lineF = (coords: number[][], props: Record<string, unknown> = {}): GeoJSON
 const B = chosen('B');
 const A = chosen('A');
 const C = chosen('C');
-const NEW = new Set(NEW_HOMES);
+const RELEASED_SET = new Set(RELEASED);
 const distKm = (u: { lng: number; lat: number }) => Math.hypot((u.lng - S.lng) * cosLat, u.lat - S.lat) * 111.32;
 const occupant = (unitId: string) => DEMO_BRIEF.employees.find((e) => e.id === OPTIONS.B.assignments.find((a) => a.unitId === unitId)?.employeeId)?.name ?? '';
 /** Deterministic per-building variety (floors, which floor is ours, rotation). */
@@ -150,17 +156,18 @@ let frames: Record<string, number> = {};
 
 // ── Captions ─────────────────────────────────────────────────────────────
 const P = FACTS.demo.people;
+const R = FACTS.replan;
 const CAPS = [
   { a: 0.7, b: 4.5, eye: 'Monday · Iberia Grid', html: `We won the ${FACTS.demo.city} data-centre.<br><span>Who goes on site?</span>` },
   { a: 4.9, b: 9.3, eye: 'The decision', html: `${P} engineers, ${FACTS.demo.months} months.<br><span>From 1 December.</span>` },
-  { a: 10, b: 15.6, eye: 'HR, the traditional way', html: `${P} searches. ${P} landlords.<br><span>${P} contracts. ${FACTS.kpi.opsHoursManual} hours.</span>` },
+  { a: 10, b: 15.6, eye: 'HR, the traditional way', html: `${P} landlords. ${P} contracts.<br><span>${P} deposits. ${FACTS.demo.hrHoursByHand} hours.</span>` },
   { a: 16, b: 21.4, eye: 'With Settle In', html: 'One brief.<br><span>One partner.</span>' },
-  { a: 22.6, b: 31.4, eye: '1 · Brief', html: 'HR pastes the email.<br><span>The AI reads it.</span>' },
-  { a: 31.8, b: 45.2, eye: '2 · Plan', html: 'Three plans.<br><span>Cost against commute.</span>' },
-  { a: 45.6, b: 54.8, eye: '3 · Approve', html: `A person checks.<br><span>${P} homes, one click.</span>` },
+  { a: 22.6, b: 31.4, eye: '1 · Brief', html: 'HR sends one brief.<br><span>The AI reads it.</span>' },
+  { a: 31.8, b: 45.2, eye: '2 · Plan', html: 'Cheapest. Closest. Balanced.<br><span>From real, verified flats.</span>' },
+  { a: 45.6, b: 54.8, eye: '3 · Approve', html: `A person checks.<br><span>${P} homes, one signature.</span>` },
   { a: 55.4, b: 64.2, eye: '4 · Move in', html: 'A home near the site.<br><span>Keys and Wi-Fi on WhatsApp.</span>' },
-  { a: 64.8, b: 73.2, eye: '5 · Re-plan', html: `+${FACTS.replan.people} engineers from month ${FACTS.replan.fromMonth}.<br><span>Nobody moved.</span>` },
-  { a: 74.4, b: 83.2, eye: 'Next missions', html: `${FACTS.cities[0]} first.<br><span>Four more cities.</span>` },
+  { a: 64.8, b: 73.2, eye: '5 · Re-plan', html: `From month ${R.fromMonth}, a team of ${P - R.people}.<br><span>${R.people} flats released. Nobody moved.</span>` },
+  { a: 74.4, b: 84.6, eye: 'Next missions', html: `${FACTS.cities[0]} first.<br><span>Then Spain, then Europe.</span>` },
 ];
 const STEPS = [22.4, 31.8, 45.6, 55.2, 64.6, 73.8];
 
@@ -196,17 +203,19 @@ async function init() {
     canvasContextAttributes: { preserveDrawingBuffer: true, antialias: true },
   } as maplibregl.MapOptions);
   await new Promise<void>((r) => map.once('load', () => r()));
-  ['rings', 'units', 'site', 'siteline', 'cities'].forEach((id) => map.addSource(id, { type: 'geojson', data: fc([]) }));
+  ['rings', 'units', 'site', 'siteline', 'cities', 'arcs', 'cpins'].forEach((id) => map.addSource(id, { type: 'geojson', data: fc([]) }));
   map.addLayer({ id: 'rings', type: 'line', source: 'rings', filter: ['==', ['geometry-type'], 'LineString'], paint: { 'line-color': '#2A2320', 'line-width': 2, 'line-dasharray': [2, 2], 'line-opacity': ['get', 'o'] } });
   map.addLayer({ id: 'ring-labels', type: 'symbol', source: 'rings', filter: ['==', ['geometry-type'], 'Point'], layout: { 'text-field': ['get', 'label'], 'text-size': 22, 'text-font': ['Noto Sans Bold'], 'text-allow-overlap': true }, paint: { 'text-color': '#2A2320', 'text-opacity': ['get', 'o'], 'text-halo-color': '#F3ECE5', 'text-halo-width': 2 } });
   map.addLayer({ id: 'siteline', type: 'line', source: 'siteline', paint: { 'line-color': '#C4573D', 'line-width': 3, 'line-opacity': ['get', 'o'] } });
   map.addLayer({ id: 'site', type: 'fill-extrusion', source: 'site', paint: { 'fill-extrusion-color': ['get', 'c'], 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-base': ['get', 'b'], 'fill-extrusion-opacity': 1 } });
   map.addLayer({ id: 'units', type: 'fill-extrusion', source: 'units', paint: { 'fill-extrusion-color': ['get', 'c'], 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-base': ['get', 'b'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true } });
+  map.addLayer({ id: 'arcs', type: 'line', source: 'arcs', layout: { 'line-cap': 'round' }, paint: { 'line-color': ['get', 'c'], 'line-width': 4, 'line-opacity': ['get', 'o'] } });
+  map.addLayer({ id: 'cpins', type: 'fill-extrusion', source: 'cpins', paint: { 'fill-extrusion-color': ['get', 'c'], 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-base': ['get', 'b'], 'fill-extrusion-opacity': 1 } });
   map.addLayer({ id: 'cities', type: 'circle', source: 'cities', paint: { 'circle-radius': ['get', 'r'], 'circle-color': ['get', 'c'], 'circle-opacity': ['get', 'o'], 'circle-stroke-color': '#F7EEE7', 'circle-stroke-width': 3, 'circle-stroke-opacity': ['get', 'o'] } });
-  for (const c of CITY_POINTS) {
+  for (const c of [...CITY_POINTS.map((x) => ({ name: x.city as string, when: FACTS.rollout[x.city] })), { name: EUROPE.label, when: EUROPE.when }]) {
     const el = document.createElement('div');
-    el.className = c.city === 'Madrid' ? 'city launch' : 'city';
-    el.innerHTML = `<b>${c.city}</b><span>${FACTS.rollout[c.city]}</span>`;
+    el.className = c.name === 'Madrid' ? 'city launch' : 'city';
+    el.innerHTML = `<b>${c.name}</b><span>${c.when}</span>`;
     $('cities').appendChild(el);
     cityEls.push(el);
   }
@@ -308,12 +317,13 @@ async function seek(t: number) {
   const unitsF: GeoJSON.Feature[] = [];
   const gone = 1 - seg(t, SPAIN + 1, SPAIN + 3);
   for (const u of madridUnits) {
-    const isNew = NEW.has(u.id);
-    const appear = (isNew ? out(seg(t, REPLAN_T + 1.6, REPLAN_T + 3.4)) : out(seg(t, 32.8 + distKm(u) * 0.06, 33.8 + distKm(u) * 0.06))) * gone;
+    const appear = out(seg(t, 32.8 + distKm(u) * 0.06, 33.8 + distKm(u) * 0.06)) * gone;
     if (appear <= 0) continue;
-    const ours = (t >= OPT_TIMES.B && B.has(u.id)) || (isNew && t >= REPLAN_T);
+    const ours = t >= OPT_TIMES.B && B.has(u.id);
+    // re-plan: the five leavers' flats are released one after the other (the band switches off)
+    const released = RELEASED_SET.has(u.id) && t >= REPLAN_T + 1.8 + RELEASED.indexOf(u.id) * 0.45;
     if (t >= APPROVED) {
-      if (ours) unitsF.push(...building(u.id, u.lng, u.lat, px, isNew ? appear : Math.max(0.001, out(seg(t, APPROVED, APPROVED + 1.4))) * gone, true, false));
+      if (ours) unitsF.push(...building(u.id, u.lng, u.lat, px, Math.max(0.001, out(seg(t, APPROVED, APPROVED + 1.4))) * gone, !released, released));
       else {
         const left = appear * (1 - seg(t, APPROVED, APPROVED + 1.2));
         if (left > 0) unitsF.push(poly(circle(u.lng, u.lat, 4.5 * px, 6), { c: '#BDAFA5', h: 34 * left * px, b: 0 }));
@@ -330,8 +340,14 @@ async function seek(t: number) {
 
   // Badges
   const replanOn = t >= REPLAN_T + 1 && t < SPAIN;
-  $('clock').textContent = replanOn ? `Month ${FACTS.replan.fromMonth} · +${FACTS.replan.people} engineers · ${REPLAN.moved} moved` : '';
-  op('clock', replanOn ? fadeWin(t, REPLAN_T + 1, SPAIN, 0.4) : 0);
+  // Expansion counter: flats occupied on average each year as the cities open (financial model)
+  const years = FACTS.kpi.occupiedByYear;
+  const stage = t < 79.4 ? 0 : t < 80.6 ? 1 : t < EUROPE_T ? 2 : t < 83 ? 3 : 4;
+  const growth = ['2027 · Madrid', '2028 · + Valencia, Zaragoza', '2029 · + Barcelona, Málaga', '2030 · five cities', `2031 · ${EUROPE.label}`][stage];
+  const flats = stage < 4 ? ` · <em>${years[stage]}</em> flats occupied` : ' · first hub abroad';
+  const spainOn = t >= SPAIN + 4.4 && t < END;
+  $('clock').innerHTML = replanOn ? `Month ${R.fromMonth} · team of ${P - R.people} · <em>${R.people}</em> flats released · ${REPLAN.moved} moved` : spainOn ? growth + flats : '';
+  op('clock', replanOn ? fadeWin(t, REPLAN_T + 1, SPAIN, 0.4) : spainOn ? fadeWin(t, SPAIN + 4.4, END, 0.4) : 0);
   $('seal').innerHTML = `✓ Approved · <em>${OPTIONS.B.assignments.length} / ${DEMO_BRIEF.employees.length}</em> housed`;
   op('seal', fadeWin(t, 50, 55, 0.4));
 
@@ -346,13 +362,39 @@ async function seek(t: number) {
     el.innerHTML = `<b>${occupant(homeUnit.id)}</b><span>1-bed · floor ${2 + Math.floor(hash(homeUnit.id) * 3)} · ${Math.round(firstHome.commuteMin)} min to site</span>`;
   }
 
-  // Spain roll-out
-  const cityO = (i: number) => (i === 0 ? seg(t, 78.4, 79) : i < 3 ? seg(t, 79.8, 80.4) : seg(t, 81, 81.6)) * (1 - seg(t, END + 0.6, END + 1.2));
-  set('cities', fc(CITY_POINTS.map((c, i) => ({ type: 'Feature', properties: { o: cityO(i), r: i === 0 ? 14 : 10, c: i === 0 ? '#C4573D' : '#2A2320' }, geometry: { type: 'Point', coordinates: [c.lng, c.lat] } }))));
-  CITY_POINTS.forEach((c, i) => {
+  // Roll-out: arcs fly out of Madrid, each city rises and pulses; then Europe (year 5)
+  const startOf = (i: number) => (i === 0 ? 78.2 : i < 3 ? 79.4 + (i - 1) * 0.35 : i < 5 ? 80.6 + (i - 3) * 0.35 : 82.6);
+  const pts = [...CITY_POINTS, { city: EUROPE.label, lng: EUROPE.lng, lat: EUROPE.lat }];
+  const endFade = 1 - seg(t, END + 0.6, END + 1.2);
+  // when the camera rises to Europe, the Spanish labels (except Madrid) step back so they do not pile up
+  const cityO = (i: number) => seg(t, startOf(i) + 0.5, startOf(i) + 0.9) * endFade * (i > 0 && i < 5 ? 1 - seg(t, EUROPE_T + 0.6, EUROPE_T + 1.4) : 1);
+  const M = CITY_POINTS[0];
+  const arcF: GeoJSON.Feature[] = [];
+  const pinF: GeoJSON.Feature[] = [];
+  const pk = mpp(cam.zoom);
+  pts.forEach((c, i) => {
+    const p = out(seg(t, startOf(i), startOf(i) + 0.9));
+    if (i > 0 && p > 0) {
+      const mid = { lng: (M.lng + c.lng) / 2, lat: (M.lat + c.lat) / 2 + Math.hypot(c.lng - M.lng, c.lat - M.lat) * 0.22 };
+      const curve = Array.from({ length: 41 }, (_, k) => {
+        const u = k / 40;
+        return [(1 - u) ** 2 * M.lng + 2 * (1 - u) * u * mid.lng + u * u * c.lng, (1 - u) ** 2 * M.lat + 2 * (1 - u) * u * mid.lat + u * u * c.lat];
+      });
+      arcF.push(lineF(partial(curve, p), { o: 0.85 * endFade, c: i === 5 ? '#2A2320' : '#C4573D' }));
+    }
+    const rise = out(seg(t, startOf(i) + 0.6, startOf(i) + 1.4)) * endFade;
+    if (rise > 0) {
+      const pulse = 1 + 0.35 * Math.max(0, Math.sin((t - startOf(i)) * 4)) * (1 - seg(t, startOf(i) + 1.6, startOf(i) + 2.4));
+      pinF.push(poly(circle(c.lng, c.lat, (i === 0 ? 9 : 7) * pk * pulse, 20), { c: i === 0 ? '#C4573D' : i === 5 ? '#2A2320' : '#C4573D', h: (i === 0 ? 120 : 80) * pk * rise, b: 0 }));
+    }
+  });
+  set('arcs', fc(arcF));
+  set('cpins', fc(pinF));
+  set('cities', fc([]));
+  pts.forEach((c, i) => {
     const p = map.project([c.lng, c.lat]);
     cityEls[i].style.left = `${p.x}px`;
-    cityEls[i].style.top = `${p.y - 18}px`;
+    cityEls[i].style.top = `${p.y - 18 - 90 * out(seg(t, startOf(i) + 0.6, startOf(i) + 1.4))}px`;
     cityEls[i].style.opacity = String(cityO(i));
   });
 

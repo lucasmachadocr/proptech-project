@@ -2,6 +2,7 @@
 // (searches, landlords, contracts, hours); then Settle In turns it into one brief.
 import * as THREE from 'three';
 import { FACTS } from './data';
+import { HAIRS, SKINS, createPerson } from './people';
 
 const CREAM = 0xf7eee7;
 const INK = 0x2a2320;
@@ -86,19 +87,16 @@ export function createOffice(canvas: HTMLCanvasElement) {
   // HR manager (seen from behind), simple shapes
   box(0.75, 0.08, 0.7, INK, -0.95, 0.62, 1.05); // seat
   box(0.75, 0.9, 0.08, INK, -0.95, 1.1, 1.4); // backrest
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.3, 0.55, 6, 16), mat(TERRA));
-  body.position.set(-0.95, 1.2, 1.05);
-  body.castShadow = true;
-  scene.add(body);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 24, 16), mat(0x5a4038));
-  head.position.set(-0.95, 1.78, 1.02);
-  head.castShadow = true;
-  scene.add(head);
+  // Marta, HR: faces her screen; phone to her ear while the old way piles up, then types the brief
+  const hr = createPerson({ shirt: TERRA, skin: SKINS[1], hair: HAIRS[0], scale: 1.18, phase: 0.7 });
+  hr.group.position.set(-0.95, 0, 1.0);
+  hr.group.rotation.y = Math.PI - 0.35;
+  scene.add(hr.group);
 
   // Local timeline (s): request 0.3–1.6 · traditional way piles up 1.6–6.2 · Settle In collapses it
   // into one brief 6.8–8.4 · dolly 0–10 · push into the screen 10.2–12.6.
   const T = { email: 0.3, pile0: 1.6, pileDur: 4.6, merge0: 6.8, mergeDur: 1.6, dolly: 10, push0: 10.2, pushDur: 2.4 };
-  const TAGS = ['Search', 'Landlord', 'Contract', 'Invoice'];
+  const TAGS = ['Search', 'Landlord', 'Contract', 'Deposit'];
   const font = (w: number, px: number) => `${w} ${px}px Avenir Next, Helvetica, sans-serif`;
   function drawScreen(t: number) {
     ctx.fillStyle = '#FFFDFB';
@@ -151,13 +149,29 @@ export function createOffice(canvas: HTMLCanvasElement) {
       ctx.fillStyle = '#FFFFFF';
       ctx.font = font(800, 21);
       const k = Math.min(FACTS.demo.people, Math.ceil(pile * FACTS.demo.people));
-      ctx.fillText(`${k} searches · ${k} landlords · ${k} contracts`, 574, 34);
+      ctx.fillText(`${k} landlords · ${k} contracts · ${k} deposits`, 574, 34);
       // hours spent, in a second red tag
       ctx.fillStyle = '#2A2320';
       ctx.fillRect(820, 548, 190, 44);
       ctx.fillStyle = '#FFFFFF';
       ctx.font = font(800, 24);
-      ctx.fillText(`${Math.round(pile * FACTS.kpi.opsHoursManual)} hours`, 840, 578);
+      ctx.fillText(`${Math.round(pile * FACTS.demo.hrHoursByHand)} hours`, 840, 578);
+      ctx.globalAlpha = 1;
+    }
+    // the project dates move: everything starts again
+    const moved = Math.max(0, Math.min(1, (t - (T.pile0 + T.pileDur - 0.4)) * 3)) * (1 - merge * 3);
+    if (moved > 0) {
+      ctx.globalAlpha = Math.min(1, moved);
+      ctx.fillStyle = '#2A2320';
+      ctx.beginPath();
+      ctx.roundRect(212, 250, 600, 110, 18);
+      ctx.fill();
+      ctx.fillStyle = '#E9A08E';
+      ctx.font = font(800, 22);
+      ctx.fillText('PROJECT UPDATE', 244, 290);
+      ctx.fillStyle = '#F7EEE7';
+      ctx.font = font(800, 34);
+      ctx.fillText('Dates moved. Start again.', 244, 336);
       ctx.globalAlpha = 1;
     }
     if (merge > 0.35) {
@@ -198,6 +212,10 @@ export function createOffice(canvas: HTMLCanvasElement) {
     const lx = -0.55 + 0.25 * ease;
     const ly = 1.2 - 0.05 * ease;
     camera.lookAt(lx + (0 - lx) * pe, ly + (1.75 - ly) * pe, -0.2 + (-0.32 + 0.2) * pe);
+    const win = (a: number, b: number, f = 0.35) => Math.min(Math.max(0, Math.min(1, (t - a) / f)), Math.max(0, Math.min(1, (b - t) / f)));
+    const gesture = t < T.pile0 + 0.4 ? 'type' : t < T.pile0 + T.pileDur - 0.6 ? 'phone' : t < T.merge0 + 0.2 ? 'shrug' : 'type';
+    const amount = gesture === 'phone' ? win(T.pile0 + 0.4, T.pile0 + T.pileDur - 0.6) : gesture === 'shrug' ? win(T.pile0 + T.pileDur - 0.6, T.merge0 + 0.2) : 1;
+    hr.update(t, gesture, amount, 0.25 * Math.sin(t * 0.8));
     drawScreen(t);
     renderer.render(scene, camera);
   }

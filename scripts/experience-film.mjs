@@ -6,7 +6,7 @@
 // 3. opens film/index.html (MapLibre 3D map + Three.js office) and screenshots window.seek(t) 30×/s,
 // 4. encodes with ffmpeg (FFMPEG=/path/to/ffmpeg or ffmpeg in PATH).
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { chromium } from '@playwright/test';
 import { CLIPS, trim } from './commercial-shots.mjs';
@@ -18,7 +18,7 @@ const DURATION = 90;
 const OUT = 'docs/commercial';
 const FRAMES = resolve('film/.frames');
 const RENDER = resolve('node_modules/.cache/film-render');
-const FILM_URL = 'http://localhost:5179/film/index.html';
+const FILM_URL = 'http://localhost:5189/film/index.html';
 const ffmpeg = findFfmpeg();
 if (!ffmpeg) throw new Error('ffmpeg not found: set FFMPEG=/path/to/ffmpeg');
 
@@ -131,6 +131,33 @@ async function filmServer() {
   throw new Error('film server did not start');
 }
 
+// Narration: one clip per scene in film/.audio (n1.mp3 …), placed at the start of its scene.
+// [file, start (s), tempo] — tempo > 1 speeds a clip up slightly so it fits its scene.
+const VOICE = [
+  ['n1.mp3', 0.4, 1.1],
+  ['n2.mp3', 10.4, 1.0],
+  ['n3.mp3', 22.8, 1.0],
+  ['n4.mp3', 33.2, 1.0],
+  ['n5.mp3', 46.4, 1.0],
+  ['n6.mp3', 55.8, 1.0],
+  ['n7.mp3', 65.2, 1.0],
+  ['n8.mp3', 77.8, 1.0],
+  ['n9.mp3', 85.2, 1.0],
+];
+function mixVoice(film) {
+  const dir = resolve('film/.audio');
+  const clips = VOICE.filter(([f]) => existsSync(`${dir}/${f}`));
+  if (!clips.length) return console.log('no narration in film/.audio, video only');
+  const inputs = clips.flatMap(([f]) => ['-i', `${dir}/${f}`]);
+  const chains = clips.map(([, at, tempo], i) => `[${i + 1}:a]atempo=${tempo},adelay=${Math.round(at * 1000)}|${Math.round(at * 1000)},volume=1.6[a${i}]`);
+  const filter = `${chains.join(';')};${clips.map((_, i) => `[a${i}]`).join('')}amix=inputs=${clips.length}:normalize=0,apad,atrim=0:${DURATION}[a]`;
+  const tmp = film.replace(/\.mp4$/, '.voice.mp4');
+  const r = spawnSync(ffmpeg, ['-y', '-loglevel', 'error', '-i', film, ...inputs, '-filter_complex', filter, '-map', '0:v', '-map', '[a]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', tmp]);
+  if (r.status !== 0) throw new Error(String(r.stderr));
+  renameSync(tmp, film);
+  console.log(`narration mixed (${clips.length} clips)`);
+}
+
 async function render(times, dir, name = (i) => `f${String(i).padStart(5, '0')}.jpg`) {
   mkdirSync(dir, { recursive: true });
   const browser = await chromium.launch({ headless: process.env.HEADLESS === '1', args: ['--window-size=1920,1180', '--ignore-gpu-blocklist', '--enable-gpu-rasterization'] });
@@ -151,7 +178,9 @@ await appClips();
 rectFrames();
 const server = await filmServer();
 try {
-  if (args.has('stills')) {
+  if (args.has('mix')) {
+    mixVoice(`${OUT}/settle-in-experience.mp4`);
+  } else if (args.has('stills')) {
     const KEY = typeof args.get('stills') === 'string' ? args.get('stills').split(',').map(Number) : [2.5, 5.5, 8.2, 15, 27, 45, 52, 70, 82, 88];
     rmSync(`${OUT}/storyboard`, { recursive: true, force: true });
     await render(KEY.map((t, i) => [i + 1, t]), `${OUT}/storyboard`, (i, t) => `${String(i).padStart(2, '0')}-t${String(t).padStart(4, '0')}.jpg`);
@@ -163,7 +192,9 @@ try {
     for (let i = Math.round(from * FPS); i < total; i++) times.push([i + 1, i / FPS]);
     await render(times, RENDER);
     const film = `${OUT}/settle-in-experience.mp4`;
-    const r = spawnSync(ffmpeg, ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', `${RENDER}/f%05d.jpg`, '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', film]);
+    const r = spawnSync(ffmpeg, ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', `${RENDER}/f%05d.jpg`, '-vf', 'scale=out_range=tv,format=yuv420p', '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-movflags', '+faststart', film]);
+    if (r.status !== 0) throw new Error(String(r.stderr));
+    mixVoice(film);
     if (r.status !== 0) throw new Error(String(r.stderr));
     console.log(`saved ${film}`);
   }

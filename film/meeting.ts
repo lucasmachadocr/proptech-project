@@ -2,6 +2,7 @@
 // decides to send engineers to the site. Low-poly, minimal, same palette as the rest of the film.
 import * as THREE from 'three';
 import { FACTS } from './data';
+import { HAIRS, SKINS, createPerson, type Person } from './people';
 
 const CREAM = 0xf7eee7;
 const INK = 0x2a2320;
@@ -63,21 +64,28 @@ export function createMeeting(canvas: HTMLCanvasElement) {
   panel.position.set(0, 2.75, -3.0);
   scene.add(panel);
 
-  // People: three each side, plus the project director standing by the screen
-  const people: { head: THREE.Mesh; base: number; phase: number }[] = [];
-  const person = (x: number, z: number, faceZ: number, shirt: number, skin: number, standing = false) => {
-    const y = standing ? 1.15 : 0.95;
-    if (!standing) box(0.55, 0.06, 0.55, INK, x, 0.55, z); // chair seat
-    const body = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.24, standing ? 0.9 : 0.5, 6, 14), mat(shirt)), x, y, z);
-    body.rotation.y = faceZ > 0 ? 0 : Math.PI;
-    const headY = standing ? 2.02 : 1.55;
-    const head = add(new THREE.Mesh(new THREE.SphereGeometry(0.18, 20, 14), mat(skin)), x, headY, z);
-    people.push({ head, base: headY, phase: x * 1.7 + z });
-  };
+  // People: three each side of the table, plus the project director standing by the screen
+  const seated: { p: Person; x: number; z: number }[] = [];
   const shirts = [TERRA, 0x6e6059, 0xead9cc, 0x9fae8c, 0x2a2320, 0xe9a08e];
-  [-1.4, 0, 1.4].forEach((x, i) => person(x, -1.05, 1, shirts[i], SKIN[i]));
-  [-1.4, 0, 1.4].forEach((x, i) => person(x, 1.05, -1, shirts[i + 3], SKIN[i + 3]));
-  person(2.25, -2.3, 1, TERRA, SKIN[0], true);
+  [-1.4, 0, 1.4].forEach((x, i) => {
+    box(0.55, 0.06, 0.55, INK, x, 0.55, -1.05);
+    const p = createPerson({ shirt: shirts[i], skin: SKINS[i], hair: HAIRS[i], phase: i * 1.3 });
+    p.group.position.set(x, 0, -1.05 - 0.05);
+    scene.add(p.group);
+    seated.push({ p, x, z: -1.05 });
+  });
+  [-1.4, 0, 1.4].forEach((x, i) => {
+    box(0.55, 0.06, 0.55, INK, x, 0.55, 1.05);
+    const p = createPerson({ shirt: shirts[i + 3], skin: SKINS[i + 3], hair: HAIRS[i + 3], phase: i * 0.9 + 2 });
+    p.group.position.set(x, 0, 1.05 + 0.05);
+    p.group.rotation.y = Math.PI;
+    scene.add(p.group);
+    seated.push({ p, x, z: 1.05 });
+  });
+  const director = createPerson({ shirt: TERRA, skin: SKINS[0], hair: HAIRS[4], seated: false, phase: 0.4 });
+  director.group.position.set(2.15, 0, -2.25);
+  director.group.rotation.y = -0.5;
+  scene.add(director.group);
 
   const font = (w: number, px: number) => `${w} ${px}px Avenir Next, Helvetica, sans-serif`;
   function drawScreen(t: number) {
@@ -131,7 +139,24 @@ export function createMeeting(canvas: HTMLCanvasElement) {
     const ease = 1 - (1 - e) ** 2;
     camera.position.set(-5.2 + 3.4 * ease, 4.6 - 1.2 * ease, 6.4 - 1.6 * ease);
     camera.lookAt(0.2, 1.7 + 0.3 * ease, -1.2);
-    for (const p of people) p.head.position.y = p.base + Math.sin(t * 2.2 + p.phase) * 0.012 + (t > 4.4 && t < 5.4 ? Math.sin((t - 4.4) * Math.PI) * 0.04 : 0);
+    const k = (a: number, b: number) => Math.min(1, Math.max(0, (t - a) / (b - a)));
+    const win = (a: number, b: number, f = 0.4) => Math.min(k(a, a + f), 1 - k(b - f, b));
+    // The director points at the screen while the decision appears, then turns to the team.
+    director.update(t, 'point', win(0.8, 6.2, 0.6), -0.6 + 0.9 * k(6, 7));
+    seated.forEach(({ p, x, z }, i) => {
+      // everyone looks at the screen, then at each other once the decision is on it
+      // head yaw towards the screen (0, -3), in the person's own frame, limited to a natural turn
+      const rot = z > 0 ? Math.PI : 0;
+      let yaw = Math.atan2(0 - x, -3 - z) - rot;
+      yaw = Math.atan2(Math.sin(yaw), Math.cos(yaw));
+      const toScreen = Math.max(-0.95, Math.min(0.95, yaw));
+      const toPeers = x === 0 ? 0.45 : -Math.sign(x) * 0.5 * (z > 0 ? -1 : 1);
+      const look = toScreen + (toPeers - toScreen) * k(6.4 + i * 0.15, 7.2 + i * 0.15);
+      // one engineer raises a hand ("I'll go"), another one nods, the rest type a note
+      const gesture = i === 4 ? 'raise' : i === 1 ? 'type' : 'idle';
+      const amount = i === 4 ? win(6.6, 8.8, 0.5) : 1;
+      p.update(t, gesture, amount, look);
+    });
     drawScreen(t);
     renderer.render(scene, camera);
   }
