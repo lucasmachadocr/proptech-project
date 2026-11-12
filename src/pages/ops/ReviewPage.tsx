@@ -17,7 +17,8 @@ import { useStore } from '../../store';
 /** Ops plan review queue: the team checks every AI plan before the client sees it. */
 export default function ReviewPage() {
   const navigate = useNavigate();
-  const { brief, plan, units, reviewedAt, releasePlan, demoStep, setDemoStep, flex } = useStore();
+  const { brief, plan, units, reviewedAt, releasePlan, choosePlan, demoStep, setDemoStep, flex, mode } = useStore();
+  const live = mode === 'live';
   const [preview, setPreview] = useState<'A' | 'B' | 'C'>('B');
   const options = useMemo(() => {
     if (!plan) return null;
@@ -42,18 +43,26 @@ export default function ReviewPage() {
   const shown = options![preview];
   const chosen = new Map(shown.assignments.map((a) => [a.unitId, brief.employees.find((e) => e.id === a.employeeId)?.name ?? '']));
   const priceOf = (p: Plan) => Math.round(companyInvoice(p.metrics.monthlyRent, p.metrics.apartments, flex).total / p.metrics.apartments);
-  const planUnits = plan.assignments.map((a) => units.find((u) => u.id === a.unitId)!);
-  const leasesOk = plan.assignments.every((a) => checkLease(draftForAssignment(brief, a)).canSign);
+  const cp = live ? shown : plan; // live: the checks follow the option the client is looking at
+  const planUnits = cp.assignments.map((a) => units.find((u) => u.id === a.unitId)!);
+  const leasesOk = cp.assignments.every((a) => checkLease(draftForAssignment(brief, a)).canSign);
   const checks = [
-    { ok: plan.unassigned.length === 0, text: `Everyone housed (${plan.assignments.length} of ${brief.employees.length})` },
-    { ok: planUnits.every((u) => u.status === 'verified'), text: 'Only verified apartments (KYC, Catastro, photos, price)' },
-    { ok: plan.assignments.every((a) => a.commuteMin <= brief.maxCommuteMin), text: `Every commute ≤ ${brief.maxCommuteMin} min (max ${Math.round(plan.metrics.maxCommuteMin)} min)` },
-    { ok: plan.assignments.every((a) => a.rent <= brief.budgetCaps[brief.employees.find((e) => e.id === a.employeeId)!.role]), text: 'Every apartment within budget' },
+    { ok: cp.unassigned.length === 0, text: `Everyone housed (${cp.assignments.length} of ${brief.employees.length})` },
+    live
+      ? { ok: true, text: `Real public listings (${units[0]?.source ?? 'Spotahome'}). Settle In verifies each flat before signing` }
+      : { ok: planUnits.every((u) => u.status === 'verified'), text: 'Only verified apartments (KYC, Catastro, photos, price)' },
+    { ok: cp.assignments.every((a) => a.commuteMin <= brief.maxCommuteMin), text: `Every commute ≤ ${brief.maxCommuteMin} min (max ${Math.round(cp.metrics.maxCommuteMin)} min)` },
+    { ok: cp.assignments.every((a) => a.rent <= brief.budgetCaps[brief.employees.find((e) => e.id === a.employeeId)!.role]), text: 'Every apartment within budget' },
     { ok: leasesOk, text: 'Lease drafts pass seasonal-lease rules' },
   ];
   const expiring = planUnits.filter((u) => u.availableTo <= end);
 
   const release = () => {
+    if (live) {
+      choosePlan(options![preview]);
+      navigate('/client/plan');
+      return;
+    }
     releasePlan();
     if (demoStep) setDemoStep(3);
     navigate('/client/plan');
@@ -62,9 +71,13 @@ export default function ReviewPage() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm font-semibold tracking-widest text-brand-700 uppercase">Step 2 · Plan — Ops review</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">Our team checks every plan before the client sees it</h1>
-        <p className="mt-3 max-w-2xl text-lg text-stone-600">The AI compared three ways to house the team in {plan.computedMs} ms. A person reviews the recommended one and releases it.</p>
+        <p className="text-sm font-semibold tracking-widest text-brand-700 uppercase">{live ? 'Step 2 · Plan' : 'Step 2 · Plan — Ops review'}</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">{live ? 'Three plans for your team' : 'Our team checks every plan before the client sees it'}</h1>
+        <p className="mt-3 max-w-2xl text-lg text-stone-600">
+          {live
+            ? `Built in ${plan.computedMs} ms from ${units.length} real flats listed in Madrid. Pick one; in the live service a person checks it with the operators within ${FACTS.kpi.briefToPlanHours} h.`
+            : `The AI compared three ways to house the team in ${plan.computedMs} ms. A person reviews the recommended one and releases it.`}
+        </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Options" data-testid="plan-options">
@@ -105,15 +118,15 @@ export default function ReviewPage() {
         <section className="rounded-2xl border border-stone-200 bg-white p-6" data-testid="review-queue">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-sm text-stone-500">Queue · 1 plan</div>
+              <div className="text-sm text-stone-500">{live ? `Option ${preview} · checks` : 'Queue · 1 plan'}</div>
               <div className="mt-1 text-lg font-semibold text-ink">
-                {company.name} · {brief.employees.length} engineers · {site.city}
+                {live ? brief.companyName : company.name} · {brief.employees.length} engineers · {site.city}
               </div>
               <div className="text-sm text-stone-600">
                 {brief.months} months · {plan.metrics.apartments} apartments · {eur(plan.metrics.monthlyRent)} rent / month
               </div>
             </div>
-            {reviewedAt ? <Badge tone="green">Released</Badge> : <Badge tone="amber">Waiting for review</Badge>}
+            {live ? null : reviewedAt ? <Badge tone="green">Released</Badge> : <Badge tone="amber">Waiting for review</Badge>}
           </div>
 
           <ul className="mt-5 space-y-2" aria-label="Automatic checks">
@@ -145,15 +158,15 @@ export default function ReviewPage() {
           <button
             type="button"
             onClick={release}
-            disabled={!!reviewedAt && !demoStep}
+            disabled={!live && !!reviewedAt && !demoStep}
             className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-brand-700 px-6 py-3.5 text-base font-semibold text-white hover:bg-brand-800 disabled:bg-stone-300"
             data-testid="release-plan"
           >
-            {reviewedAt ? 'Open the plan the client sees →' : 'Release option B to the client →'}
+            {live ? `Continue with option ${preview} →` : reviewedAt ? 'Open the plan the client sees →' : 'Release option B to the client →'}
           </button>
         </section>
 
-        <CityMap city={site.city} chosen={chosen} height={420} showZones={false} />
+        <CityMap city={site.city} chosen={chosen} height={420} showZones={false} site={site} />
       </div>
     </div>
   );

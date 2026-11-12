@@ -32,7 +32,7 @@ export default function LedgerPage() {
         <p className="text-sm font-semibold tracking-widest text-brand-700 uppercase">Ops · Payouts ledger</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">Where the money goes</h1>
         <p className="mt-2 text-lg text-stone-600">
-          {company.name} · {m.apartments} apartments · {brief.months} months. Rent never sits on our balance sheet: a licensed payment provider holds it and splits each payment.
+          {brief.companyName || company.name} · {m.apartments} apartments · {brief.months} months. Rent never sits on our balance sheet: a licensed payment provider holds it and splits each payment.
         </p>
       </div>
 

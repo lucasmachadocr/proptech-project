@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { llm } from '../../ai/llm';
-import CityMap from '../../components/CityMap';
+import CityMap, { ListingLink } from '../../components/CityMap';
 import { AiBadge, Badge, Explain, Kpi, LinkButton } from '../../components/ui';
 import { FACTS } from '../../data/facts';
 import { providerById } from '../../data/providers';
@@ -14,9 +14,11 @@ import { useStore } from '../../store';
 
 export default function PlanPage() {
   const navigate = useNavigate();
-  const { brief, plan, units, reviewedAt, approvedAt, approvePlan, flex, setFlex, demoStep } = useStore();
+  const { brief, plan, units, reviewedAt, approvedAt, approvePlan, flex, setFlex, demoStep, mode } = useStore();
+  const live = mode === 'live';
   const [summary, setSummary] = useState('');
-  const [showList, setShowList] = useState(false);
+  const [showList, setShowList] = useState(live);
+  const [agreed, setAgreed] = useState(false); // live: the Sign step
 
   useEffect(() => {
     if (plan) llm.explainPlan(plan, brief).then(setSummary);
@@ -59,15 +61,25 @@ export default function PlanPage() {
         </div>
         {approvedAt ? (
           <div className="flex items-center gap-3">
-            <Badge tone="green">✓ Approved</Badge>
+            <Badge tone="green">{live ? '✓ Approved and signed' : '✓ Approved'}</Badge>
             <button type="button" onClick={next} className="rounded-full bg-brand-700 px-6 py-3 font-semibold text-white hover:bg-brand-800" data-testid="plan-next">
               Next: the project changes →
             </button>
           </div>
         ) : (
-          <button type="button" onClick={approve} className="rounded-full bg-brand-700 px-8 py-3.5 text-lg font-semibold text-white hover:bg-brand-800" data-testid="approve-plan">
-            Approve the plan
-          </button>
+          <div className="flex flex-col items-end gap-2">
+            {live && (
+              <label className="flex max-w-sm items-start gap-2 text-sm text-stone-700" data-testid="sign-agreement">
+                <input type="checkbox" className="mt-0.5 h-4 w-4 accent-brand-700" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+                <span>
+                  I accept the Settle In framework agreement. One seasonal lease per flat is then signed online by both sides.
+                </span>
+              </label>
+            )}
+            <button type="button" onClick={approve} disabled={live && !agreed} className="rounded-full bg-brand-700 px-8 py-3.5 text-lg font-semibold text-white hover:bg-brand-800 disabled:bg-stone-300" data-testid="approve-plan">
+              {live ? 'Approve and sign' : 'Approve the plan'}
+            </button>
+          </div>
         )}
       </div>
 
@@ -85,7 +97,7 @@ export default function PlanPage() {
           testId="kpi-pay"
         />
         <Kpi label="Average commute" value={`${m.avgCommuteMin} min`} hint={`Longest ${Math.round(m.maxCommuteMin)} min · limit ${brief.maxCommuteMin} min`} explain="Straight-line distance × 1.3 road factor at 50 km/h, from each apartment to the work site." />
-        <Kpi label="Team housed" value={`${plan.assignments.length} / ${brief.employees.length}`} hint="One apartment each, all verified" ai explain="Our engine compared every person with every verified apartment and picked the lowest total of rent plus commute time, within your budget and commute limit." />
+        <Kpi label="Team housed" value={`${plan.assignments.length} / ${brief.employees.length}`} hint={live ? 'One flat each · public listings, verified before signing' : 'One apartment each, all verified'} ai explain="Our engine compared every person with every verified apartment and picked the lowest total of rent plus commute time, within your budget and commute limit." />
       </div>
 
       <label className="flex w-fit items-center gap-3 rounded-full bg-white px-4 py-2 text-sm ring-1 ring-stone-200">
@@ -96,7 +108,7 @@ export default function PlanPage() {
         <Explain label="What is Flex?">An optional add-on of {pct(FACTS.pricing.flex)} of rent, shown as its own line on the invoice. Half is Settle In revenue, half goes to an operator pool.</Explain>
       </label>
 
-      <CityMap city={site.city} chosen={chosen} height={440} showZones={false} />
+      <CityMap city={site.city} chosen={chosen} height={440} showZones={false} site={site} />
 
       <div className="flex flex-wrap gap-3">
         <button type="button" onClick={() => setShowList(!showList)} className="rounded-full px-4 py-2 text-sm font-medium ring-1 ring-stone-300 hover:ring-ink" aria-expanded={showList}>
@@ -126,8 +138,10 @@ export default function PlanPage() {
                   {UNIT_TYPE_SHORT[u.type]} · {u.zone} · {Math.round(a.commuteMin)} min
                 </div>
                 <div className="num mt-1 text-sm text-stone-500">
-                  {eur(a.rent)}/mo · {providerById(u.providerId).name}
+                  {eur(a.rent)}/mo · {u.source ?? providerById(u.providerId).name}
+                  {u.approxLocation ? ' · approx. location' : ''}
                 </div>
+                {u.sourceUrl && <ListingLink unit={u} />}
               </li>
             );
           })}

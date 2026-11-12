@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { APP_NAME, APP_TAGLINE } from '../config';
 import { FACTS } from '../data/facts';
+import { LIVE_LISTINGS_COLLECTED } from '../data/liveListings';
+import { formatDate } from '../lib/dates';
 import { useStore } from '../store';
 import DemoBar from './DemoBar';
 import AiStatus from './AiStatus';
@@ -37,10 +39,20 @@ const SUBNAV: Record<RoleKey, { to: string; label: string }[]> = {
   ],
 };
 
+// Live mode: the company journey only (Deliverable 3: brief → plan → sign → re-plan → pay).
+const LIVE_NAV = [
+  { to: '/client/brief', label: '1 Brief' },
+  { to: '/ops/review', label: '2 Options' },
+  { to: '/client/plan', label: '3 Approve & sign' },
+  { to: '/client/change', label: '4 Re-plan' },
+  { to: '/client/invoice', label: '5 Invoice' },
+];
+
 export default function Layout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const reset = useStore((s) => s.reset);
+  const live = useStore((s) => s.mode === 'live');
   const demoActive = useStore((s) => s.demoStep !== null) && pathname !== '/';
   const role = ROLES.find((r) => pathname.startsWith(`/${r.key}`))?.key;
   useEffect(() => {
@@ -63,6 +75,11 @@ export default function Layout() {
             <Logo tagline={APP_TAGLINE} />
           </NavLink>
 
+          {live ? (
+            <span className="order-3 w-full text-sm font-semibold text-stone-600 sm:order-none sm:w-auto" data-testid="live-badge">
+              Your mission · {FACTS.cities[0]}
+            </span>
+          ) : (
           <nav aria-label="Role" className="order-3 w-full sm:order-none sm:w-auto">
             <div className="flex w-full rounded-full bg-white p-1 ring-1 ring-stone-200 sm:inline-flex sm:w-auto" role="tablist">
               {ROLES.map((r) => (
@@ -78,6 +95,7 @@ export default function Layout() {
               ))}
             </div>
           </nav>
+          )}
 
           <div className="ml-auto flex items-center gap-2 text-sm">
             <AiStatus />
@@ -89,10 +107,10 @@ export default function Layout() {
             </button>
           </div>
         </div>
-        {role && SUBNAV[role].length > 0 && (
+        {(live ? pathname.startsWith('/client') || pathname.startsWith('/ops/review') : role && SUBNAV[role].length > 0) && (
           <div className="border-t border-stone-200/70">
             <nav aria-label="Section" className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 sm:px-6">
-              {SUBNAV[role].map((s) => (
+              {(live ? LIVE_NAV : SUBNAV[role!]).map((s) => (
                 <NavLink
                   key={s.to}
                   to={s.to}
@@ -114,9 +132,15 @@ export default function Layout() {
       <DemoBar />
       <footer className="safe-bottom border-t border-stone-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-5 text-sm text-stone-600 sm:px-6">
-          <span>
-            <strong className="font-semibold text-ink">Demo data — fictional.</strong> Companies, operators, apartments and people are invented. Commute times are estimates.
-          </span>
+          {live ? (
+            <span data-testid="footer-live">
+              <strong className="font-semibold text-ink">Real listings, simulated service.</strong> Flats from Spotahome (public listings), collected {formatDate(LIVE_LISTINGS_COLLECTED)}; availability not confirmed, locations by neighbourhood. Commute times are estimates.
+            </span>
+          ) : (
+            <span>
+              <strong className="font-semibold text-ink">Demo data — fictional.</strong> Companies, operators, apartments and people are invented. Commute times are estimates.
+            </span>
+          )}
           <NavLink to="/about-tech" className="font-medium text-ink underline underline-offset-4 hover:text-brand-700" data-testid="about-mvp">
             About this MVP · built with {FACTS.mvpTool}
           </NavLink>

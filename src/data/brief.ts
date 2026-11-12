@@ -1,4 +1,5 @@
 import type { Brief, Employee } from '../types';
+import { MADRID_PROJECT_SITES } from './sites';
 
 // Demo case (business plan v11): 20 engineers in Madrid for 6 months, one apartment each.
 const NAMES: [string, string, string][] = [
@@ -59,3 +60,31 @@ export const ROLE_LABEL = {
   manager: 'Manager',
   expat: 'Engineer + family',
 } as const;
+
+// ── Live mode ────────────────────────────────────────────────────────────
+// Anyone can set up their own mission in Madrid on real public listings. Generic names: no invented people.
+export function genericTeam(n: number, from = 1, start?: string): Employee[] {
+  return Array.from({ length: n }, (_, i) => ({
+    id: `E${String(from + i).padStart(2, '0')}`,
+    name: `Engineer ${from + i}`,
+    role: 'engineer' as const,
+    title: 'Engineer',
+    household: { adults: 1, children: 0 },
+    ...(start ? { start } : {}),
+  }));
+}
+
+export const LIVE_BRIEF: Brief = {
+  id: 'BR-LIVE',
+  projectName: '',
+  companyName: '',
+  companyId: 'C01',
+  siteId: 'S-MAD',
+  site: MADRID_PROJECT_SITES[0],
+  start: '2027-01-18',
+  months: 6,
+  maxCommuteMin: 35,
+  budgetCaps: { technician: 2200, engineer: 2200, manager: 2400, expat: 2600 },
+  minUnitType: { technician: '1bed', engineer: '1bed', manager: '1bed', expat: '2bed' },
+  employees: genericTeam(10),
+};

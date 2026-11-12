@@ -135,7 +135,7 @@ export async function recordClip(out, { prep, route, ready, scene }) {
   const ctx = await openProfile({ record: tmp });
   const prepPage = ctx.pages()[0] ?? (await ctx.newPage());
   await prepPage.goto(BASE);
-  await prepPage.evaluate(() => localStorage.removeItem('settle-in-demo-v11'));
+  await prepPage.evaluate(() => localStorage.removeItem('settle-in-v12'));
   await prepPage.reload();
   if (prep) await prep(prepPage);
   const tCreate = Date.now();

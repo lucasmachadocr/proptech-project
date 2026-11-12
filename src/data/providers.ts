@@ -30,4 +30,7 @@ export const PROVIDERS: Provider[] = [
   p('P12', 'Prime Stay Madrid', 'Prime Stay Madrid S.L.', 'B88733015', 'Madrid', '2026-10-12', { status: 'pending', kycVerified: false }),
 ];
 
-export const providerById = (id: string) => PROVIDERS.find((x) => x.id === id)!;
+/** Live mode: flats come from a public marketplace; the operator behind each listing is not known yet. */
+export const PUBLIC_SOURCE: Provider = { ...p('SPOTAHOME', 'Spotahome (public listing)', 'Operator not yet onboarded', '—', 'Madrid', '2026-11-12'), status: 'pending', kycVerified: false };
+
+export const providerById = (id: string) => PROVIDERS.find((x) => x.id === id) ?? PUBLIC_SOURCE;

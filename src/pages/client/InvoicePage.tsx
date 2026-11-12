@@ -52,11 +52,11 @@ export default function InvoicePage() {
         <div className="flex flex-wrap justify-between gap-4 text-sm">
           <div>
             <div className="text-stone-500">Billed to</div>
-            <div className="font-semibold text-ink">{company.legalName}</div>
+            <div className="font-semibold text-ink">{brief.companyName || company.legalName}</div>
           </div>
           <div className="sm:text-right">
             <div className="text-stone-500">From {APP_NAME} · {period}</div>
-            <div className="font-semibold text-ink">{brief.projectName}</div>
+            <div className="font-semibold text-ink">{brief.projectName || 'Project team housing'}</div>
           </div>
         </div>
 
