@@ -10,8 +10,8 @@ This file mirrors CLAUDE.md. Keep both in sync when you change the rules.
   number in a page; import it from `FACTS`. `src/data/facts.test.ts` fails if the two drift.
 - Demo case locked by tests: 20 engineers · Madrid · 6 months · rent €225,504 → company pays
   €239,034 (rent + 4% markup + 2% Flex) → Settle In revenue €24,805; Flex pool €2,255 is NOT revenue.
-  Options A/B/C = €1,935/31 min · €1,992/22 min · €2,140/12 min. Re-plan = +3 engineers from month 3 =
-  +€23,904, nobody moves, 23 apartments (4% tier).
+  Options A/B/C = €1,935/31 min · €1,992/22 min · €2,140/12 min. Re-plan = the team drops to 15 from
+  month 4: −€29,880 with Flex (5 × €1,992 × 3), −€9,960 without; nobody moves; 15 apartments (4% tier).
 - Static only: no backend, no API keys. The hosted LLM of phase 2 goes behind `src/ai/llm.ts` (`LlmClient`).
 - "AI" = engines in `src/ai/`. One is a real language model: the brief reader (`briefReader.ts`,
   DistilBERT through transformers.js, downloaded by the browser on first use, rule parser as fallback).

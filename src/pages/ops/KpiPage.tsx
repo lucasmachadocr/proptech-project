@@ -30,19 +30,19 @@ export default function KpiPage() {
             </>
           }
           ai
-          explain={`Hours of operations work for the reference mission (20 people, 6 months): ${K.opsHoursAtLaunch} h at launch, ${K.opsHoursPerMission} h from month 12, against ${K.opsHoursManual} h when the same housing is organised by hand (financial model).`}
+          explain={`Hours of operations work for the reference mission (20 people, 6 months): ${K.opsHoursPerMission} h with our tools, against ${K.opsHoursManual} h when an agency or HR does the same work by hand (financial model).`}
           bar={K.opsHoursPerMission / K.opsHoursManual}
         />
-        <Tile label="Apartments per support agent" value={`1 : ${K.apartmentsPerAgent}`} sub="AI first line + one agent" ai explain="Each support agent covers 150 occupied apartments; the AI assistant answers and triages first." />
+        <Tile label="Apartments per support agent" value={`1 : ${K.apartmentsPerAgent}`} sub="AI first line + one agent" ai explain={`Each support agent covers ${K.apartmentsPerAgent} occupied apartments: the WhatsApp AI assistant answers first and escalates only exceptions (150 for a people-only desk).`} />
         <Tile
           label="Occupancy vs break-even"
           value={`${occupied} / ${be}`}
           sub={
             <>
-              occupied apartments needed at year-1 economics; reached in year 3 ({K.occupiedApartmentsYear3} occupied vs {K.breakEvenApartmentsYear3} needed)
+              occupied apartments to break even in Madrid alone; {K.breakEvenApartmentsYear3} with five cities, reached in {K.breakEvenMonth}
             </>
           }
-          explain={`Apartments occupied in approved missions in this demo, against the ${be} occupied apartments that would cover fixed costs at year-1 economics (Madrid only, most missions at the 0% launch markup). In year 3 the plan has ${K.occupiedApartmentsYear3} apartments occupied on average and needs ${K.breakEvenApartmentsYear3}: the first year with positive EBITDA (financial model).`}
+          explain={`Apartments occupied in approved missions in this demo, against the ${be} occupied at the same time that cover Madrid's fixed costs (€${FACTS.finance.fixedCostsPerMonth.toLocaleString('en-IE')} a month ÷ €171 contribution per apartment-month). With five cities the break-even rises to ${K.breakEvenApartmentsYear3}; the plan reaches it in ${K.breakEvenMonth}, with ${K.occupiedByYear.join(' → ')} apartments occupied on average in 2027–2030 (financial model).`}
           bar={occupied / be}
         />
       </div>

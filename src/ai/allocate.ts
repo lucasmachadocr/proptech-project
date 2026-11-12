@@ -234,12 +234,16 @@ function unassignedReason(ctx: Ctx, emp: Employee): string {
   return `No feasible unit: most candidates are ${top ? FAIL_TEXT[top[0]] : 'unavailable'}.`;
 }
 
-/** Months an employee is housed in the mission (joins on `emp.start`, leaves at the mission end). */
+/** Months an employee is housed: from `emp.start` (or the mission start) to `emp.end` (or the mission end). */
 export function planMonths(emp: Employee | undefined, brief: Brief): number {
-  if (!emp?.start || emp.start <= brief.start) return brief.months;
-  const [y0, m0] = brief.start.split('-').map(Number);
-  const [y1, m1] = emp.start.split('-').map(Number);
-  return brief.months - ((y1 - y0) * 12 + (m1 - m0));
+  const monthIndex = (iso: string) => {
+    const [y0, m0] = brief.start.split('-').map(Number);
+    const [y1, m1] = iso.split('-').map(Number);
+    return (y1 - y0) * 12 + (m1 - m0);
+  };
+  const from = emp?.start && emp.start > brief.start ? monthIndex(emp.start) : 0;
+  const to = emp?.end ? Math.min(brief.months, monthIndex(emp.end)) : brief.months;
+  return Math.max(0, to - from);
 }
 
 export function planMetrics(brief: Brief, assignments: Assignment[], objective: number): PlanMetrics {

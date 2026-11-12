@@ -1,3 +1,4 @@
+import { addMonths } from '../lib/dates';
 import { describe, expect, it } from 'vitest';
 import { DEMO_BRIEF, EXTRA_ENGINEERS } from '../data/brief';
 import { FRAUD_UNIT_ID, MONTH_3, UNITS } from '../data/units';
@@ -78,23 +79,36 @@ describe('allocate (demo brief)', () => {
   });
 });
 
-describe('reallocate (+3 engineers from month 3, business plan v11)', () => {
+describe('reallocate: the team drops to 15 from month 4 (deck, Nov 2026)', () => {
+  const plan = allocate(DEMO_BRIEF, UNITS);
+  const leave = addMonths(DEMO_BRIEF.start, FACTS.replan.fromMonth - 1);
+  const next: Brief = { ...DEMO_BRIEF, employees: DEMO_BRIEF.employees.map((e, i) => (i >= DEMO_BRIEF.employees.length - FACTS.replan.people ? { ...e, end: leave } : e)) };
+  const r = reallocate(plan, DEMO_BRIEF, next, UNITS);
+
+  it('nobody moves; the leavers are housed for 3 months only', () => {
+    expect(r.moved).toBe(FACTS.replan.moved);
+    expect(r.plan.metrics.apartmentMonths).toBe(FACTS.demo.apartmentMonths - FACTS.replan.people * FACTS.replan.months);
+    expect(r.totalDelta).toBeLessThan(0);
+  });
+});
+
+describe('reallocate (+3 engineers from month 3)', () => {
   const plan = allocate(DEMO_BRIEF, UNITS);
   const joiners = EXTRA_ENGINEERS.map((e) => ({ ...e, start: MONTH_3 }));
   const next: Brief = { ...DEMO_BRIEF, employees: [...DEMO_BRIEF.employees, ...joiners] };
   const r = reallocate(plan, DEMO_BRIEF, next, UNITS);
 
   it('adds exactly 3 apartments and nobody already housed moves', () => {
-    expect(r.plan.assignments).toHaveLength(FACTS.replan.apartmentsAfter);
-    expect(r.diff.filter((d) => d.kind === 'new' && d.toUnitId)).toHaveLength(FACTS.replan.people);
-    expect(r.moved).toBe(FACTS.replan.moved);
+    expect(r.plan.assignments).toHaveLength(23);
+    expect(r.diff.filter((d) => d.kind === 'new' && d.toUnitId)).toHaveLength(3);
+    expect(r.moved).toBe(0);
     assertHardRules(r.plan, { ...next, start: DEMO_BRIEF.start }, UNITS.map((u) => ({ ...u, availableFrom: DEMO_BRIEF.start })));
   });
 
   it('joiners are housed for 4 months only', () => {
-    expect(r.plan.metrics.apartmentMonths).toBe(FACTS.demo.apartmentMonths + FACTS.replan.people * FACTS.replan.months);
+    expect(r.plan.metrics.apartmentMonths).toBe(FACTS.demo.apartmentMonths + 3 * 4);
     const newRent = r.diff.filter((d) => d.kind === 'new').reduce((s, d) => s + d.rentDelta, 0);
-    expect(r.totalDelta).toBe(newRent * FACTS.replan.months);
+    expect(r.totalDelta).toBe(newRent * 4);
   });
 
   it('an extension moves only the people whose apartment is not free for the new dates', () => {

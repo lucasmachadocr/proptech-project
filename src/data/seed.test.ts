@@ -53,14 +53,14 @@ describe('seed data', () => {
     }
   });
 
-  it('re-plan: +3 engineers from month 3 cost 3 × €1,992 × 4 = €23,904 and stay in the 4% tier', () => {
+  it('re-plan: the team drops to 15 from month 4, saving 5 × €1,992 × 3 = €29,880 with Flex, still in the 4% tier', () => {
     const plan = allocate(DEMO_BRIEF, UNITS);
     const price = missionPricePerApartmentMonth(plan.metrics.totalRent, plan.metrics.apartments, plan.metrics.apartmentMonths, true);
     expect(price).toBe(FACTS.replan.pricePerApartmentMonth);
-    expect(replanCost(price, FACTS.replan.people, FACTS.replan.months)).toBe(FACTS.replan.delta);
+    expect(-replanCost(price, FACTS.replan.people, FACTS.replan.months)).toBe(FACTS.replan.delta);
+    expect(companyInvoice(1, FACTS.replan.apartmentsAfter).markupRate).toBe(0.04);
+    // +3 from month 3 still works (used by 'Try another change')
     const r = reallocate(plan, DEMO_BRIEF, { ...DEMO_BRIEF, employees: [...DEMO_BRIEF.employees, ...EXTRA_ENGINEERS.map((e) => ({ ...e, start: MONTH_3 }))] }, UNITS);
-    expect(r.plan.metrics.apartments).toBe(FACTS.replan.apartmentsAfter);
     expect(r.moved).toBe(0);
-    expect(companyInvoice(1, r.plan.metrics.apartments).markupRate).toBe(0.04);
   });
 });

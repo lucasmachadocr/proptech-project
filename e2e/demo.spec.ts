@@ -39,14 +39,15 @@ test('guided demo: Brief → Plan → Approve → Re-plan → Invoice → Summar
     await page.getByTestId('demo-next').click();
   });
 
-  await test.step('4 · Re-plan — +3 engineers from month 3', async () => {
+  await test.step('4 · Re-plan — the team drops to 15 from month 4', async () => {
     const diff = page.getByTestId('realloc-diff');
     await expect(diff).toBeVisible();
     await expect(page.getByTestId('kpi-moved')).toContainText('0');
-    await expect(page.getByTestId('kpi-replan-cost')).toContainText('+€23,904');
-    await expect(page.getByTestId('kpi-replan-cost')).toContainText('3 × €1,992 × 4 months');
-    await expect(diff).toContainText('23');
+    await expect(page.getByTestId('kpi-replan-cost')).toContainText('−€29,880');
+    await expect(page.getByTestId('kpi-replan-cost')).toContainText('5 × €1,992 × 3 months');
+    await expect(diff).toContainText('15');
     await expect(diff).toContainText('4%');
+    await expect(page.getByTestId('without-flex')).toContainText('€9,960');
     await page.getByTestId('demo-next').click();
   });
 

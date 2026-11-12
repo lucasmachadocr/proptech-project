@@ -78,6 +78,7 @@ export interface Employee {
   household: Household;
   nationality?: string;
   start?: ISODate; // joins after the mission start (e.g. +3 engineers from month 3)
+  end?: ISODate; // leaves before the mission end: the flat is released from this date (e.g. team drops to 15 from month 4)
   /** Personal requirements that override the brief (live mode: executive, family, closer to site). */
   budgetCap?: number;
   maxCommuteMin?: number;

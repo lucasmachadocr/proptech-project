@@ -77,7 +77,7 @@ export const CLIPS = {
       await d.wait(1600);
     },
   },
-  // 3 · +3 engineers from month 3: +€23,904, nobody moves (~8 s)
+  // 3 · Re-plan: the team drops to 15 from month 4, flats released with Flex (~8 s)
   '3-replan': {
     prep: async (p) => {
       await demo.start(p);
