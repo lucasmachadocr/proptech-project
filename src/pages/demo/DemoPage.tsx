@@ -1,5 +1,6 @@
+import { Suspense, lazy } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import CityMap from '../../components/CityMap';
+const BriefMap3D = lazy(() => import('../../components/BriefMap3D'));
 import { APP_ONE_LINER, CONTACT_EMAIL } from '../../config';
 import { FACTS } from '../../data/facts';
 import { LIVE_LISTINGS_COLLECTED, LIVE_UNITS } from '../../data/liveListings';
@@ -76,10 +77,12 @@ export default function DemoPage() {
             {FACTS.cities[0]}: real flats, live today
           </h2>
           <p className="text-sm text-stone-600">
-            Furnished flats listed publicly on Spotahome, Airbnb and Booking.com, collected {formatDate(LIVE_LISTINGS_COLLECTED)}. Each dot is a real listing; tap one to see it.
+            {LIVE_UNITS.length} furnished apartments listed online, collected {formatDate(LIVE_LISTINGS_COLLECTED)}, on a 3D map of the city: each barrio shaded by how many we found there, each apartment a block. Tap one to see it.
           </p>
         </div>
-        <CityMap city={FACTS.cities[0]} units={LIVE_UNITS} site={MADRID_PROJECT_SITES[0]} height={380} />
+        <Suspense fallback={<div className="grid place-items-center rounded-2xl bg-white text-sm text-stone-500 ring-1 ring-stone-200" style={{ height: 420 }}>Loading the 3D map of Madrid…</div>}>
+          <BriefMap3D city={FACTS.cities[0]} units={LIVE_UNITS} site={MADRID_PROJECT_SITES[0]} height={420} />
+        </Suspense>
       </section>
 
       <section aria-labelledby="next" className="rounded-2xl border border-stone-200 bg-white p-6" data-testid="coming-next">

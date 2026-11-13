@@ -34,7 +34,7 @@ test('guided demo: Brief → Plan → Approve → Re-plan → Invoice → Summar
   await test.step('3 · Approve', async () => {
     await expect(page.getByTestId('plan-kpis')).toContainText('20 / 20');
     await expect(page.getByTestId('kpi-pay')).toContainText('€239,034');
-    await expect(page.getByTestId('city-map').locator('.leaflet-container')).toBeVisible();
+    await expect(page.getByTestId('map3d')).toBeVisible();
     await page.getByTestId('approve-plan').click();
     await page.getByTestId('demo-next').click();
   });
