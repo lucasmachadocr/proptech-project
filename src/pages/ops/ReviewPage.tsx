@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { DEFAULT_LAMBDA, LAMBDA_CLOSEST, LAMBDA_LOWEST_COST, allocate } from '../../ai/allocate';
 import { commuteMin } from '../../ai/geo';
 import { checkLease } from '../../ai/compliance';
-import CityMap from '../../components/CityMap';
 import PlanExplorer from '../../components/PlanExplorer';
 import { AiBadge, Badge, Explain, LinkButton, cx } from '../../components/ui';
 import { companyById } from '../../data/companies';
@@ -49,7 +48,6 @@ export default function ReviewPage() {
   const company = companyById(brief.companyId);
   const end = stayEnd(brief.start, brief.months);
   const shown = options![preview];
-  const chosen = new Map(shown.assignments.map((a) => [a.unitId, brief.employees.find((e) => e.id === a.employeeId)?.name ?? '']));
   const priceOf = (p: Plan) => Math.round(companyInvoice(p.metrics.monthlyRent, p.metrics.apartments, flex).total / p.metrics.apartments);
   const cp = live ? shown : plan; // live: the checks follow the option the client is looking at
   const planUnits = cp.assignments.map((a) => units.find((u) => u.id === a.unitId)!);
@@ -192,16 +190,13 @@ export default function ReviewPage() {
           </button>
         </section>
 
-        {!live && <CityMap city={site.city} chosen={chosen} height={420} showZones={false} site={site} />}
       </div>
-      {live && (
-        <section aria-label={`Flats in option ${preview}`} className="space-y-3">
-          <h2 className="text-lg font-semibold text-ink">
-            Option {preview}: the {shown.assignments.length} flats, on the map
-          </h2>
-          <PlanExplorer brief={brief} site={site} assignments={shown.assignments} units={units} />
-        </section>
-      )}
+      <section aria-label={`Flats in option ${preview}`} className="space-y-3">
+        <h2 className="text-lg font-semibold text-ink">
+          Option {preview}: the {shown.assignments.length} flats, on the map
+        </h2>
+        <PlanExplorer brief={brief} site={site} assignments={shown.assignments} units={units} />
+      </section>
     </div>
   );
 }

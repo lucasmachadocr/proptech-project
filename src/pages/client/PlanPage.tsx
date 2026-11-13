@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { llm } from '../../ai/llm';
-import CityMap from '../../components/CityMap';
 import PlanExplorer from '../../components/PlanExplorer';
 import { AiBadge, Badge, Explain, Kpi, LinkButton } from '../../components/ui';
 import { FACTS } from '../../data/facts';
@@ -43,7 +42,6 @@ export default function PlanPage() {
   const m = plan.metrics;
   const inv = companyInvoice(m.monthlyRent, m.apartments, flex);
   const missionTotal = companyInvoice(m.totalRent, m.apartments, flex).total;
-  const chosen = new Map(plan.assignments.map((a) => [a.unitId, brief.employees.find((e) => e.id === a.employeeId)?.name ?? '']));
 
   const approve = () => {
     approvePlan();
@@ -109,7 +107,7 @@ export default function PlanPage() {
         <Explain label="What is Flex?">An optional add-on of {pct(FACTS.pricing.flex)} of rent, shown as its own line on the invoice. Half is Settle In revenue, half goes to an operator pool.</Explain>
       </label>
 
-      {live ? <PlanExplorer brief={brief} site={site} assignments={plan.assignments} units={units} /> : <CityMap city={site.city} chosen={chosen} height={440} showZones={false} site={site} />}
+      <PlanExplorer brief={brief} site={site} assignments={plan.assignments} units={units} />
 
       <div className="flex flex-wrap gap-3">
 {!live && (

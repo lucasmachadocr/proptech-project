@@ -39,7 +39,7 @@ test('no horizontal scroll at 390 px on the demo screens', async ({ page }) => {
   await expect(page.getByTestId('review-queue')).toBeVisible();
   await page.getByTestId('demo-next').click();
   await expect(page.getByTestId('plan-kpis')).toBeVisible();
-  await expect(page.getByTestId('city-map').locator('.leaflet-container')).toBeVisible();
+  await expect(page.getByTestId('map3d')).toBeVisible();
   await noHorizontalScroll(page, 'PlanPage (map)');
 
   await page.getByTestId('demo-next').click();
