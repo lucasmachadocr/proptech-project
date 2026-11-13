@@ -12,12 +12,13 @@ import { chromium } from '@playwright/test';
 import { CLIPS, trim } from './commercial-shots.mjs';
 import { findFfmpeg, recordClip, startServer, warmUp } from './lib/film.mjs';
 
+const HQ = process.argv.includes('--hq');
 const args = new Map(process.argv.slice(2).map((a) => a.replace(/^--/, '').split('=')).map(([k, v]) => [k, v ?? true]));
 const FPS = 30;
 const DURATION = 90;
 const OUT = 'docs/commercial';
 const FRAMES = resolve('film/.frames');
-const RENDER = resolve('node_modules/.cache/film-render');
+const RENDER = resolve(HQ ? 'node_modules/.cache/film-render-hq' : 'node_modules/.cache/film-render');
 const FILM_URL = 'http://localhost:5189/film/index.html';
 const ffmpeg = findFfmpeg();
 if (!ffmpeg) throw new Error('ffmpeg not found: set FFMPEG=/path/to/ffmpeg');
@@ -158,17 +159,41 @@ function mixVoice(film) {
   console.log(`narration mixed (${clips.length} clips)`);
 }
 
+// The deck plays the film on two slides: chapter 1, then 2a and 2b back to back (each file stays under the deck's cap).
+// Cuts fall between narration lines.
+const CHAPTERS = [
+  ['1-problem-and-brief', 0, 33.0],
+  ['2a-plans-approve-move-in', 33.0, 65.0],
+  ['2b-replan-and-expansion', 65.0, DURATION],
+];
+const CHAPTER_MAX_MB = Number(process.env.CHAPTER_MAX_MB ?? 14.5);
+function chapters(film) {
+  for (const [slug, a, b] of CHAPTERS) {
+    const dur = b - a;
+    const audioK = 160;
+    const videoK = Math.min(9000, Math.floor((CHAPTER_MAX_MB * 8000) / dur) - audioK - 60);
+    const out = `${OUT}/chapter-${slug}.mp4`;
+    const base = ['-y', '-loglevel', 'error', '-ss', String(a), '-to', String(b), '-i', film, '-c:v', 'libx264', '-preset', 'slow', '-b:v', `${videoK}k`, '-maxrate', `${Math.round(videoK * 1.3)}k`, '-bufsize', `${videoK * 2}k`, '-pix_fmt', 'yuv420p', '-passlogfile', `${RENDER}/pass-${slug}`];
+    let r = spawnSync(ffmpeg, [...base, '-pass', '1', '-an', '-f', 'mp4', '/dev/null']);
+    if (r.status !== 0) throw new Error(String(r.stderr));
+    r = spawnSync(ffmpeg, [...base, '-pass', '2', '-c:a', 'aac', '-b:a', `${audioK}k`, '-movflags', '+faststart', out]);
+    if (r.status !== 0) throw new Error(String(r.stderr));
+    console.log(`chapter ${slug}: ${dur.toFixed(1)} s at ${videoK} kb/s → ${out}`);
+  }
+}
+
 async function render(times, dir, name = (i) => `f${String(i).padStart(5, '0')}.jpg`) {
   mkdirSync(dir, { recursive: true });
   const browser = await chromium.launch({ headless: process.env.HEADLESS === '1', args: ['--window-size=1920,1180', '--ignore-gpu-blocklist', '--enable-gpu-rasterization'] });
-  const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+  // --hq renders every frame at 3840×2160 (2× device pixels) and the encode downsamples it to 1080p: sharper text, edges and map lines.
+  const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: HQ ? 2 : 1 });
   page.on('pageerror', (e) => console.error('page error:', e.message));
   await page.goto(FILM_URL);
   await page.waitForFunction(() => window.filmReady === true, null, { timeout: 120_000 });
   const t0 = Date.now();
   for (const [i, t] of times) {
     await page.evaluate((x) => window.seek(x), t);
-    await page.screenshot({ path: `${dir}/${name(i, t)}`, type: 'jpeg', quality: 93 });
+    await page.screenshot({ path: `${dir}/${name(i, t)}`, type: 'jpeg', quality: HQ ? 97 : 93 });
     if (i % 150 === 0) console.log(`t=${t.toFixed(1)} s  (${((Date.now() - t0) / 1000).toFixed(0)} s elapsed)`);
   }
   await browser.close();
@@ -180,6 +205,8 @@ const server = await filmServer();
 try {
   if (args.has('mix')) {
     mixVoice(`${OUT}/settle-in-experience.mp4`);
+  } else if (args.has('chapters')) {
+    chapters(`${OUT}/settle-in-experience.mp4`);
   } else if (args.has('stills')) {
     const KEY = typeof args.get('stills') === 'string' ? args.get('stills').split(',').map(Number) : [2.5, 5.5, 8.2, 15, 27, 45, 52, 70, 82, 88];
     rmSync(`${OUT}/storyboard`, { recursive: true, force: true });
@@ -192,11 +219,11 @@ try {
     for (let i = Math.round(from * FPS); i < total; i++) times.push([i + 1, i / FPS]);
     await render(times, RENDER);
     const film = `${OUT}/settle-in-experience.mp4`;
-    const r = spawnSync(ffmpeg, ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', `${RENDER}/f%05d.jpg`, '-vf', 'scale=out_range=tv,format=yuv420p', '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-movflags', '+faststart', film]);
+    const r = spawnSync(ffmpeg, ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', `${RENDER}/f%05d.jpg`, '-vf', HQ ? 'scale=1920:1080:flags=lanczos:out_range=tv,format=yuv420p' : 'scale=out_range=tv,format=yuv420p', '-c:v', 'libx264', '-preset', HQ ? 'slower' : 'slow', '-crf', HQ ? '15' : '18', '-movflags', '+faststart', film]);
     if (r.status !== 0) throw new Error(String(r.stderr));
     mixVoice(film);
-    if (r.status !== 0) throw new Error(String(r.stderr));
     console.log(`saved ${film}`);
+    chapters(film);
   }
 } finally {
   server?.kill();

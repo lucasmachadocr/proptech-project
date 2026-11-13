@@ -199,7 +199,7 @@ async function init() {
     fadeDuration: 0,
     attributionControl: false,
     maxPitch: 75,
-    pixelRatio: 1,
+    pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
     canvasContextAttributes: { preserveDrawingBuffer: true, antialias: true },
   } as maplibregl.MapOptions);
   await new Promise<void>((r) => map.once('load', () => r()));
