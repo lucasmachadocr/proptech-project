@@ -161,6 +161,7 @@ test('live mode: your own mission in Madrid on real public listings', async ({ p
     await page.getByTestId('live-company').fill('Acme Data Centres');
     await page.getByTestId('live-site').getByRole('button', { name: 'Valdebebas business district' }).click();
     await expect(page.getByTestId('live-site-now')).toContainText('Valdebebas');
+    await expect(page.getByTestId('brief-map3d')).toBeVisible({ timeout: 30_000 }); // the 3D map of Madrid, barrios and flats
     await page.getByTestId('brief-summary').getByRole('button', { name: '5', exact: true }).click();
     await expect(page.getByTestId('live-people')).toHaveValue('5');
     await page.getByTestId('budget-month').fill('11000'); // team per month → 2,200 per flat
@@ -182,7 +183,7 @@ test('live mode: your own mission in Madrid on real public listings', async ({ p
   await test.step('Approve and sign; flats are described (no links) and shown on the 3D map', async () => {
     await expect(page.getByTestId('listing-card').first()).toContainText('Listed on');
     await expect(page.getByTestId('listing-card').filter({ hasText: '(family)' }).first()).toContainText('2-bed');
-    await expect(page.locator('[data-testid=plan-explorer] a')).toHaveCount(0);
+    await expect(page.locator('[data-testid=plan-explorer] [data-testid=listing-card] a')).toHaveCount(0); // flats have no links (the map's own attribution links are fine)
     await expect(page.getByTestId('map3d')).toBeVisible();
     await expect(page.getByTestId('approve-plan')).toBeDisabled();
     await page.getByTestId('sign-agreement').locator('input').check();

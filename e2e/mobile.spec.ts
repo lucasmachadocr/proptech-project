@@ -15,7 +15,7 @@ async function noHorizontalScroll(page: Page, name: string) {
       .filter((el) => {
         const b = el.getBoundingClientRect();
         // Elements inside a horizontal scroller (sub-nav, tables) or the map are allowed to extend.
-        return b.width > 0 && b.right > vw + 1 && !el.closest('.overflow-x-auto, .leaflet-container');
+        return b.width > 0 && b.right > vw + 1 && !el.closest('.overflow-x-auto, .leaflet-container, .maplibregl-map');
       })
       .slice(0, 5)
       .map((el) => `${el.tagName.toLowerCase()}.${String(el.className).slice(0, 60)} → ${Math.round(el.getBoundingClientRect().right)}px`);
