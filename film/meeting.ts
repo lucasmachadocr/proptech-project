@@ -12,7 +12,7 @@ const SKIN = [0x8a5a44, 0xc99576, 0x5a4038, 0xd8ab8c, 0x7a4b36, 0xb98263];
 
 export function createMeeting(canvas: HTMLCanvasElement) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
-  renderer.setPixelRatio(1);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(1920, 1080, false);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
