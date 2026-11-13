@@ -21,10 +21,14 @@ export default function PlanExplorer({ brief, site, assignments, units, height =
   const [sel, setSel] = useState<string | null>(null);
   const list = useRef<HTMLOListElement>(null);
   const chosen = useMemo(() => new Set(assignments.map((a) => a.unitId)), [assignments]);
-  const pins = useMemo(() => units.map((u) => ({ id: u.id, lng: u.lng, lat: u.lat, chosen: chosen.has(u.id) })), [units, chosen]);
+  const order = useMemo(() => new Map(assignments.map((a, i) => [a.unitId, i + 1])), [assignments]);
+  const pins = useMemo(() => units.map((u) => ({ id: u.id, lng: u.lng, lat: u.lat, chosen: chosen.has(u.id), label: order.get(u.id) })), [units, chosen, order]);
   useEffect(() => setSel(null), [assignments]);
   useEffect(() => {
-    if (sel) list.current?.querySelector(`[data-unit="${sel}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    // scroll the list only, never the page (the 3D tour selects flats one after another)
+    const ol = list.current;
+    const li = sel ? ol?.querySelector<HTMLElement>(`[data-unit="${sel}"]`) : null;
+    if (ol && li && ol.scrollHeight > ol.clientHeight) ol.scrollTo({ top: li.offsetTop - ol.offsetTop - 8, behavior: 'smooth' });
   }, [sel]);
 
   return (
@@ -65,7 +69,7 @@ export default function PlanExplorer({ brief, site, assignments, units, height =
           <Map3D site={site} pins={pins} selectedId={sel} onSelect={setSel} height={height} />
         </Suspense>
         <p className="text-xs text-stone-500">
-          Tap a flat to fly to its building. Dark tower: {site.name}. Terracotta: flats in this plan; white: other listings. Real public listings, availability not confirmed. Map © OpenStreetMap contributors, OpenFreeMap.
+          Every flat of the plan stands up in 3D with its number. Tap one, or tour the plan, to fly to its building: up close, the real building lights up in terracotta. Dark tower: {site.name}. White: other listings. Approximate locations for Spotahome and Airbnb. Real public listings, availability not confirmed. Map © OpenStreetMap contributors, OpenFreeMap.
         </p>
       </div>
     </div>

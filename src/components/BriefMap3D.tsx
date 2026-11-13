@@ -72,7 +72,16 @@ export default function BriefMap3D({ city, site, units, onPick, height = 460 }: 
         setBarrios(data.default as BarrioFC);
         // Road names are noise at city scale: show them only when zoomed right in.
         const quiet = JSON.parse(JSON.stringify(style)) as typeof style;
-        for (const l of quiet.layers) if (l.id.startsWith('highway-name')) l.minzoom = 15;
+        const keepNames = new Set(['label_city', 'label_city_capital', 'label_town']);
+        for (const l of quiet.layers as { id: string; type: string; layout?: Record<string, unknown>; paint?: Record<string, unknown>; minzoom?: number }[]) {
+          if (l.type === 'symbol' && !keepNames.has(l.id)) l.layout = { ...(l.layout ?? {}), visibility: 'none' };
+          if (l.type === 'symbol' && keepNames.has(l.id)) l.paint = { ...l.paint, 'text-color': '#A39589', 'text-halo-color': '#F7EEE7' };
+          if (l.id === 'park' || l.id === 'landcover_wood' || l.id === 'landuse_residential') l.paint = { ...l.paint, 'fill-color': '#F3ECE5' };
+          if (l.id === 'background') l.paint = { ...l.paint, 'background-color': '#F7F1EB' };
+          if (l.type === 'line' && l.id.includes('rail')) l.layout = { ...(l.layout ?? {}), visibility: 'none' };
+          if (l.type === 'line' && !l.id.includes('casing') && /highway|road|transport|minor|major|motorway|trunk|primary|secondary|tertiary/.test(l.id)) l.paint = { ...l.paint, 'line-opacity': 0.75 };
+          if (l.type === 'line' && l.id.includes('casing')) l.layout = { ...(l.layout ?? {}), visibility: 'none' };
+        }
         const m = new ml.Map({ container: box.current, style: quiet, center: [site.lng, site.lat], zoom: 10.6, pitch: 55, bearing: -15, maxPitch: 70, attributionControl: { compact: true } });
         map.current = m;
         // a flat block is small at city scale, so a click within 7 px of one counts as a tap on it
@@ -94,6 +103,7 @@ export default function BriefMap3D({ city, site, units, onPick, height = 460 }: 
         m.once('style.load', () => {
           m.addSource('barrios', { type: 'geojson', data: fc([]) });
           m.addSource('rings', { type: 'geojson', data: fc([]) });
+          m.addSource('links', { type: 'geojson', data: fc([]) });
           m.addSource('flats', { type: 'geojson', data: fc([]) });
           m.addSource('site', { type: 'geojson', data: fc([]) });
           m.addSource('labels', { type: 'geojson', data: fc([]) });
@@ -101,6 +111,7 @@ export default function BriefMap3D({ city, site, units, onPick, height = 460 }: 
           // Barrio blocks, shaded by the flats we found there.
           m.addLayer({ id: 'barrio-fill', type: 'fill', source: 'barrios', paint: { 'fill-color': BRAND, 'fill-opacity': ['step', ['get', 'n'], 0.04, 1, 0.13, 3, 0.24, 6, 0.36] } }, before);
           m.addLayer({ id: 'barrio-line', type: 'line', source: 'barrios', paint: { 'line-color': '#B9A99D', 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.6, 14, 1.4], 'line-opacity': 0.9 } }, before);
+          m.addLayer({ id: 'links', type: 'line', source: 'links', layout: { 'line-cap': 'round' }, paint: { 'line-color': BRAND, 'line-width': ['interpolate', ['linear'], ['get', 'n'], 1, 0.8, 10, 2.6], 'line-opacity': 0.45 } }, before);
           m.addLayer({ id: 'rings', type: 'line', source: 'rings', paint: { 'line-color': BRAND, 'line-width': 1.2, 'line-dasharray': [3, 3], 'line-opacity': ['get', 'o'] } }, before);
           // Available flats: dark grey blocks (approximate locations in live mode). The selected one turns terracotta.
           m.addLayer({ id: 'flats', type: 'fill-extrusion', source: 'flats', paint: { 'fill-extrusion-color': ['case', ['get', 'sel'], BRAND, FLAT], 'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 10, 320, 12, 180, 14, 70, 17, 24], 'fill-extrusion-base': 0, 'fill-extrusion-opacity': 0.96 } });
@@ -163,6 +174,14 @@ export default function BriefMap3D({ city, site, units, onPick, height = 460 }: 
         labels.push({ type: 'Feature', properties: { label: `${f.properties.name}\n${n} ${n === 1 ? 'flat' : 'flats'}`, site: false }, geometry: { type: 'Point', coordinates: [cx, cy] } });
       }
     (m.getSource('labels') as GeoJSONSource).setData(fc(labels));
+    // Lines from each barrio where we found flats to the work site: where the team would live, and where it works.
+    (m.getSource('links') as GeoJSONSource).setData(fc(labels.filter((l) => !l.properties?.site).map((l) => {
+      const [x0, y0] = (l.geometry as GeoJSON.Point).coordinates;
+      const n = Number(String(l.properties?.label).split('\n')[1]?.split(' ')[0] ?? 1);
+      const mid = [(x0 + site.lng) / 2 - (site.lat - y0) * 0.15, (y0 + site.lat) / 2 + (site.lng - x0) * 0.15];
+      const line = Array.from({ length: 25 }, (_, i) => { const t = i / 24; return [(1 - t) * (1 - t) * x0 + 2 * (1 - t) * t * mid[0] + t * t * site.lng, (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * mid[1] + t * t * site.lat]; });
+      return { type: 'Feature', properties: { n }, geometry: { type: 'LineString', coordinates: line } } as GeoJSON.Feature;
+    })));
     // First view: the barrios where we found flats, plus the work site (not every far-off listing).
     if (!fitted.current && barrios && cityUnits.length && counts.size) {
       fitted.current = true;
@@ -187,6 +206,11 @@ export default function BriefMap3D({ city, site, units, onPick, height = 460 }: 
     <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white" data-testid="city-map">
       <div className="relative" style={{ height }}>
         <div ref={box} className="h-full w-full" data-testid="brief-map3d" aria-label="3D map of Madrid with the work site, the barrios and the available flats" />
+        {live && (
+          <div className="pointer-events-none absolute bottom-2 left-2 z-10 max-w-[64%] rounded-lg bg-ink/90 px-3 py-1.5 text-xs text-white shadow" data-testid="map-sources">
+            <b>Real flats from online platforms:</b> {Object.entries(cityUnits.reduce<Record<string, number>>((a, u) => ((a[u.source ?? 'Other'] = (a[u.source ?? 'Other'] ?? 0) + 1), a), {})).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ')}
+          </div>
+        )}
         <div className="pointer-events-none absolute top-2 right-2 z-10 flex flex-wrap justify-end gap-x-3 gap-y-1 rounded-lg bg-white/95 px-3 py-1.5 text-xs text-stone-700 shadow">
           <span className="inline-flex items-center gap-1">
             <span className="h-3 w-2 rounded-sm" style={{ background: BRAND }} /> Work site
