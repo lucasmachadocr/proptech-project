@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { Suspense, lazy, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import CityMap, { CityChips } from '../../components/CityMap';
+import { CityChips } from '../../components/CityMap';
+const BriefMap3D = lazy(() => import('../../components/BriefMap3D'));
 import { AiBadge, inputCls, labelCls } from '../../components/ui';
 import { MODEL_LABEL, SAMPLE_REQUEST, readBrief, type BriefReading, type FieldKey } from '../../ai/briefReader';
 import { DEMO_EMPLOYEES, genericTeam } from '../../data/brief';
@@ -45,6 +46,7 @@ export default function BriefPage() {
   const navigate = useNavigate();
   const { brief, setBrief, runAllocation, demoStep, setDemoStep, mode } = useStore();
   const live = mode === 'live';
+  const units = useStore((s) => s.units);
   const team = (n: number) => (live ? genericTeam(n) : teamOf(n));
   const [draft, setDraft] = useState<Brief>(brief);
   const [busy, setBusy] = useState(false);
@@ -412,7 +414,9 @@ export default function BriefPage() {
       </section>
 
       <section aria-label="Map of the city">
-        <CityMap city={city} height={460} site={briefSite(draft)} onPick={live ? pickSite : undefined} />
+        <Suspense fallback={<div className="grid place-items-center rounded-2xl bg-white text-sm text-stone-500 ring-1 ring-stone-200" style={{ height: 460 }}>Loading the 3D map of Madrid…</div>}>
+          <BriefMap3D city={city} height={460} site={briefSite(draft)} units={units} onPick={live ? pickSite : undefined} />
+        </Suspense>
       </section>
     </div>
   );
