@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DEFAULT_LAMBDA, LAMBDA_CLOSEST, LAMBDA_LOWEST_COST, allocate } from '../../ai/allocate';
+import { commuteMin } from '../../ai/geo';
 import { checkLease } from '../../ai/compliance';
 import CityMap from '../../components/CityMap';
 import PlanExplorer from '../../components/PlanExplorer';
@@ -21,15 +22,16 @@ export default function ReviewPage() {
   const { brief, plan, units, reviewedAt, releasePlan, choosePlan, demoStep, setDemoStep, flex, mode } = useStore();
   const live = mode === 'live';
   const [preview, setPreview] = useState<'A' | 'B' | 'C'>('B');
-  // Live mode: HR can ask for plans from one marketplace only (Airbnb, Booking.com, Spotahome).
-  const [source, setSource] = useState<string>('all');
-  const sources = useMemo(() => [...new Set(units.map((u) => u.source).filter(Boolean))] as string[], [units]);
-  const pool = useMemo(() => (source === 'all' ? units : units.filter((u) => u.source === source)), [units, source]);
+  // Live mode: HR can keep only the flats within a commute of the site.
+  const [within, setWithin] = useState<number>(0); // 0 = all
+  const siteNow = useMemo(() => briefSite(brief), [brief]);
+  const commuteOf = useMemo(() => new Map(units.map((u) => [u.id, commuteMin(siteNow, u)])), [units, siteNow]);
+  const pool = useMemo(() => (within ? units.filter((u) => (commuteOf.get(u.id) ?? 99) <= within) : units), [units, within, commuteOf]);
   const options = useMemo(() => {
     if (!plan) return null;
-    const B = source === 'all' ? plan : allocate(brief, pool, { lambda: DEFAULT_LAMBDA });
+    const B = within ? allocate(brief, pool, { lambda: DEFAULT_LAMBDA }) : plan;
     return { A: allocate(brief, pool, { lambda: LAMBDA_LOWEST_COST }), B, C: allocate(brief, pool, { lambda: LAMBDA_CLOSEST }) } as Record<'A' | 'B' | 'C', Plan>;
-  }, [plan, brief, units, pool, source]);
+  }, [plan, brief, pool, within]);
 
   if (!plan) {
     return (
@@ -55,7 +57,7 @@ export default function ReviewPage() {
   const checks = [
     { ok: cp.unassigned.length === 0, text: `Everyone housed (${cp.assignments.length} of ${brief.employees.length})` },
     live
-      ? { ok: true, text: `Real public listings (${source === 'all' ? sources.join(', ') : source}). Settle In verifies each flat before signing` }
+      ? { ok: true, text: 'Real listed apartments. Settle In verifies each flat before signing' }
       : { ok: planUnits.every((u) => u.status === 'verified'), text: 'Only verified apartments (KYC, Catastro, photos, price)' },
     { ok: cp.assignments.every((a) => a.commuteMin <= brief.maxCommuteMin), text: `Every commute ≤ ${brief.maxCommuteMin} min (max ${Math.round(cp.metrics.maxCommuteMin)} min)` },
     { ok: cp.assignments.every((a) => a.rent <= brief.budgetCaps[brief.employees.find((e) => e.id === a.employeeId)!.role]), text: 'Every apartment within budget' },
@@ -87,18 +89,18 @@ export default function ReviewPage() {
       </div>
 
       {live && (
-        <div className="flex flex-wrap items-center gap-2 text-sm" role="radiogroup" aria-label="Listings from" data-testid="source-filter">
-          <span className="text-stone-600">Flats from:</span>
-          {['all', ...sources].map((s) => (
+        <div className="flex flex-wrap items-center gap-2 text-sm" role="radiogroup" aria-label="Distance to the site" data-testid="distance-filter">
+          <span className="text-stone-600">Apartments within:</span>
+          {[0, 15, 20, 30].map((m) => (
             <button
-              key={s}
+              key={m}
               type="button"
               role="radio"
-              aria-checked={source === s}
-              onClick={() => setSource(s)}
-              className={cx('rounded-full px-3 py-1.5 font-medium', source === s ? 'bg-ink text-white' : 'bg-white text-ink ring-1 ring-stone-300 hover:ring-ink')}
+              aria-checked={within === m}
+              onClick={() => setWithin(m)}
+              className={cx('rounded-full px-3 py-1.5 font-medium', within === m ? 'bg-ink text-white' : 'bg-white text-ink ring-1 ring-stone-300 hover:ring-ink')}
             >
-              {s === 'all' ? `All (${units.length})` : `${s} (${units.filter((u) => u.source === s).length})`}
+              {m === 0 ? `Any distance (${units.length})` : `${m} min (${units.filter((u) => (commuteOf.get(u.id) ?? 99) <= m).length})`}
             </button>
           ))}
         </div>

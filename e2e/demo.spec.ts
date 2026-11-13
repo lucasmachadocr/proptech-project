@@ -171,11 +171,11 @@ test('live mode: your own mission in Madrid on real public listings', async ({ p
     await page.getByTestId('generate-plan').click();
   });
 
-  await test.step('Options: three plans from real flats, any marketplace; pick the closest', async () => {
+  await test.step('Options: three plans from real flats, filtered by distance; pick the closest', async () => {
     await expect(page.getByRole('heading', { name: 'Three plans for your team' })).toBeVisible();
-    await expect(page.getByText(/Real public listings \(/)).toBeVisible();
-    await page.getByTestId('source-filter').getByRole('radio', { name: /^Airbnb/ }).click();
-    await expect(page.getByTestId('listing-card').first()).toContainText('Airbnb');
+    await expect(page.getByText('Real listed apartments.', { exact: false })).toBeVisible();
+    await page.getByTestId('distance-filter').getByRole('radio', { name: /^30 min/ }).click();
+    await expect(page.getByTestId('listing-card').first()).toContainText('min to the site');
     await page.getByTestId('option-C').click();
     await page.getByTestId('release-plan').click();
   });
