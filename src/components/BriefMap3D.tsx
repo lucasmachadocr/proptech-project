@@ -208,7 +208,7 @@ export default function BriefMap3D({ city, site, units, onPick, height = 460 }: 
         <div ref={box} className="h-full w-full" data-testid="brief-map3d" aria-label="3D map of Madrid with the work site, the barrios and the available flats" />
         {live && (
           <div className="pointer-events-none absolute bottom-2 left-2 z-10 max-w-[64%] rounded-lg bg-ink/90 px-3 py-1.5 text-xs text-white shadow" data-testid="map-sources">
-            <b>Real flats from online platforms:</b> {Object.entries(cityUnits.reduce<Record<string, number>>((a, u) => ((a[u.source ?? 'Other'] = (a[u.source ?? 'Other'] ?? 0) + 1), a), {})).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ')}
+            <b>{cityUnits.length}</b> listed apartments
           </div>
         )}
         <div className="pointer-events-none absolute top-2 right-2 z-10 flex flex-wrap justify-end gap-x-3 gap-y-1 rounded-lg bg-white/95 px-3 py-1.5 text-xs text-stone-700 shadow">
