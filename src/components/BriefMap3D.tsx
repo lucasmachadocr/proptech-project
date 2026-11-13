@@ -207,7 +207,7 @@ export default function BriefMap3D({ city, site, units, onPick, height = 460 }: 
       <div className="relative" style={{ height }}>
         <div ref={box} className="h-full w-full" data-testid="brief-map3d" aria-label="3D map of Madrid with the work site, the barrios and the available flats" />
         {live && (
-          <div className="pointer-events-none absolute bottom-2 left-2 z-10 max-w-[64%] rounded-lg bg-ink/90 px-3 py-1.5 text-xs text-white shadow" data-testid="map-sources">
+          <div className="pointer-events-none absolute bottom-10 left-2 z-10 max-w-[64%] sm:bottom-2 rounded-lg bg-ink/90 px-3 py-1.5 text-xs text-white shadow" data-testid="map-sources">
             <b>{cityUnits.length}</b> listed apartments
           </div>
         )}

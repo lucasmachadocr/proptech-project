@@ -1,0 +1,7 @@
+# The app shell must never be served stale: phones that scanned the QR code before must get the new build.
+/
+  Cache-Control: no-cache, no-store, must-revalidate
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+/manifest.webmanifest
+  Cache-Control: no-cache
